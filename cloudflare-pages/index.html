@@ -15,9 +15,6 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Google Sign-In -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
     <style>
         * {
             margin: 0;
@@ -163,15 +160,8 @@
             line-height: 1.6;
         }
 
-        /* Google Sign-In Button Container */
-        #g_id_signin {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 24px;
-        }
-
-        /* Custom styled button as fallback */
-        .google-btn {
+        /* Custom Google Sign-In Button */
+        .google-signin-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -186,17 +176,37 @@
             cursor: pointer;
             transition: all 0.3s ease;
             width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
         }
 
-        .google-btn:hover {
+        .google-signin-btn:hover {
             border-color: var(--primary);
             box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15);
             transform: translateY(-2px);
         }
 
-        .google-btn img {
+        .google-signin-btn:active {
+            transform: translateY(0);
+        }
+
+        .google-signin-btn svg {
             width: 20px;
             height: 20px;
+        }
+
+        .google-signin-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Google Button Container (for SDK button) */
+        #google-signin-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            min-height: 50px;
         }
 
         /* Status Messages */
@@ -324,14 +334,22 @@
             Sign in with your authorized Google account to access the IT Support Dashboard.
         </p>
 
-        <!-- Google One Tap / Sign-In Button -->
-        <div id="g_id_onload" data-client_id="694517401702-4oidkp8p8h9fcpkst0d76o7tn10r1vqq.apps.googleusercontent.com"
-            data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse"
-            data-auto_prompt="false">
-        </div>
-
-        <div id="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with"
-            data-size="large" data-logo_alignment="left" data-width="300">
+        <!-- Google Sign-In Button Container -->
+        <div id="google-signin-container">
+            <!-- Custom fallback button (shown by default) -->
+            <button id="custom-google-btn" class="google-signin-btn" onclick="initiateGoogleSignIn()">
+                <svg viewBox="0 0 24 24">
+                    <path fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Sign in with Google
+            </button>
         </div>
 
         <div class="status-container">
@@ -348,77 +366,198 @@
         </div>
     </div>
 
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <script>
         // =============================================
         // 🔐 ACCESS CONTROL CONFIGURATION
         // =============================================
         const CONFIG = {
+            // ✅ Google OAuth Client ID
+            CLIENT_ID: '694517401702-4oidkp8p8h9fcpkst0d76o7tn10r1vqq.apps.googleusercontent.com',
+            
             // ✅ Allowed Email Addresses (Add/Remove as needed)
             ALLOWED_EMAILS: [
                 'manjeetkashyap.billfree@gmail.com',
                 'suraj.billfree2@gmail.com',
-                'veer.billfree@gmail.com',
-                'gaurav@billfree.in',          // Add admin emails
-                'admin@billfree.in'            // Add more as needed
+                'veerail.com',
+                'gaurav@billfree.in',
+                'admin@billfree.in'
             ],
 
-            // ✅ Apps Script Webapp URL (UPDATE THIS!)
-            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbzIN6tHiALv4KoiElfdmMpUn0O-T6UEXRCzXzqBQA1C59xrPiCYkXS7ri0MRqO8rHV-Yw/exec',
+            // ✅ Apps Script Webapp URL
+            WEBAPP_URL:ript.google.com/macros/s/AKfycbzIN6tHiALv4KoiElfdmMpUn0O-T6UEXRCzXzqBQA1C59xrPiCYkXS7ri0MRqO8rHV-Yw/exec',
 
             // Session key for localStorage
             SESSION_KEY: 'billfree_auth_session'
         };
 
+        // Track if Google SDK is loaded
+        let googleSDKLoaded = false;
+        let tokenClient = null;
+
+        // ============================================ 🚀 INITIALIZE GOOGLE SIGN-IN
         // =============================================
-        // 🔐 AUTHENTICATION HANDLER
+        function initializeGoogleSignIn() {(typeof google === 'undefined' || !google.accounts) {
+                citing for Google SDK...');
+                setTimeout(initializeGoogleSignIn, 100);
+                return;
+            }
+
+            console.log('✅ Google SDK loaded, initializing...');
+            googleSDKLoaded = true;
+
+            // Initialize Google Ide           google.accounts.id.initialize({
+                client_id: CONFIG.CLIENT_ID,
+                callback: handleCredentialResponse,
+                auto_select: false,cel_on_tap_outside: true
+            });
+
+            // Try to render the Google button (optional - we have custom button)
+            try {
+                google.accounts.id.renderButton(
+                    document.getElementById('google-signin-container'),
+                    {
+                        type: 'standard',
+                        theme: 'outline',
+                        size: 'large',
+           signin_with',
+                        shape: 'rectangular',
+                        logo_alignment: 'left',
+                        width: 300
+                    }
+                );
+                // Hide gle button renders
+                const customBtn = document.getElementById('custom-google-btn');
+                if (customBtn) customBtn.style.display = 'none';
+            } catch (e) {
+                console.log('Using custom button fallback');
+            }
+
+            // Initialiclient for popup flow
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CONFIG.CLIENT_ID,
+                scope: 'email profile',
+                callback:okenResponse
+            });
+        }
+
         // =============================================
-        function handleCredentialResponse(response) {
+        // 🔘 INITIATE GOOGLE SIGN-IN (Button Click)
+        // =============================================
+        function initiateGoogleSignIn() {
+            const btn = document.getElementById('custom-google-btn');
+            
+            if (!googleSDKLoaded) {
+                showStatus('loading', 'Loading Google Sign-In...');
+                setTimeout(() => {
+                    if (googleSDKLo                        initiateGoogleSignIn();
+                    } else {
+                        showStatus('error', 'Google Sign-In failed to load. Please refresh the page.');
+                    }
+          0);
+                return;
+            }
+
+            btn.disabled = true;
+            showStatus('loading', 'Opening Google Sign-In...');
+
+            // Try One Tap first
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() ||n.isSkippedMoment()) {
+                    console.log('One available, using popup...');
+                    // Fallback to OAuth2 popup
+                    if (tokenClient) {
+                        tokenClient.requestAccessToken();
+                     }
+                }
+                btn.disabled = false;
+            });        // =============================================
+        // 🔐 HANDLE CREDENTIAL RESPONSE (One Tap / Button)
+        // =======================================ion handleCredentialResponse(response) {
             showStatus('loading', 'Verifying your credentials...');
 
             try {
-                // Decode the JWT token
                 const payload = decodeJwtPayload(response.credential);
-
-                console.log('🔐 User authenticated:', payload.email);
-
-                // Check if email is in allowed list
-                const userEmail = payload.email.toLowerCase();
-                const isAllowed = CONFIG.ALLOWED_EMAILS.some(
-                    email => email.toLowerCase() === userEmail
-                );
-
-                if (isAllowed) {
-                    // ✅ Authorized User
-                    showStatus('success', `Welcome, ${payload.name}! Redirecting to dashboard...`);
-
-                    // Store session
-                    const session = {
-                        email: payload.email,
-                        name: payload.name,
-                        picture: payload.picture,
-                        exp: payload.exp,
-                        token: response.credential
-                    };
-                    localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
-
-                    // Redirect to Apps Script webapp after short delay
-                    setTimeout(() => {
-                        window.location.href = CONFIG.WEBAPP_URL;
-                    }, 1500);
-
-                } else {
-                    // ❌ Unauthorized User
-                    showStatus('error', `Access Denied. "${payload.email}" is not authorized to access this system.`);
-                    console.warn('⛔ Unauthorized access attempt:', payload.email);
-                }
-
+                validateAndRedirect(payload, response.credential);
             } catch (error) {
                 console.error('Authentication error:', error);
-                showStatus('error', 'Authentication failed. Please try again.');
+                shntication failed. Please try again.');
             }
         }
 
-        // Decode JWT payload (base64)
+        // =============================================
+        // 🔐 HANDLE TOKEN RESPONSE (OAuth2 Popup)
+        // =============================================
+        function handleTokenResponse(response) {
+            if (response.error) {
+                showStatus('error', 'Sign-in cancelled or failed.');
+                }
+
+            showStatus('loading', 'Fetching user info...');
+
+            // Get user info using the access token
+ tps://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${response.access_token}` }
+            }      .then(res => res.json())
+            .then(userInfo => {
+                const payload = {
+                    email: userInfo.email,
+                    name: userInfo.name,
+                    picture: userInfo.picture,
+                    exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour
+                };
+                validateAndRedirect(pay, r.access_token);
+            })
+            .catch(err => {
+                console.error('Failed to get user info:', err);
+                showStatus('error', 'Failed to verify user. Please try again.');
+            });
+        }
+
+        // =============================================
+        // ✅ VALIDATE USER AND REDIRECT
+        // =============================================
+        function validateAndRedirect(payload, token) {
+            console.log('🔐 User authenticated:', payload.email);
+
+            const userEmail = payload.email.toLowerCase();
+            const isAllowed = CONFIG.ALLOWED_EMAILS.some(
+                email => email.toLowerCase() === userEmail
+            );
+
+            if (isAllowed) {
+                // ✅ Authorized User
+                showStatus('success', `Welcome, ${payload.name}! Redirecting to dashboard...`);
+
+                // Store session
+                const session = {
+                    email: payload.email,
+                    name: payload.name,
+                    picture: payload.picture,
+                    exp: payload.exp,
+                    token: token
+                };
+                localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
+
+                // Redirect to Apps Script webapp
+                setTimeout(() => {
+                    window.location.href = CONFIG.WEBAPP_URL;
+                }, 1500);
+
+            } else {
+                // ❌ Unauthorized User
+                showStatus('error', `Access Denied. "${payload.email}" is not authorized.`);
+                console.warn('⛔ Unauthorized access attempt:', payload.email);
+            }
+        }
+
+        // =============================================
+        // 🔧 UTILITY FUNCTIONS
+        // =============================================
+        
+        // Decode JWT payload
         function decodeJwtPayload(token) {
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -438,8 +577,8 @@
 
             let icon = '';
             if (type === 'loading') icon = '<span class="spinner"></span>';
-            else if (type === 'success') icon = '<i class="fas fa-check-circle"></i>';
-            else if (type === 'error') icon = '<i class="fas fa-exclamation-triangle"></i>';
+            else if (type === 'success') icon = '<i class="fas fa-check-circle"></i> ';
+            else if (type === 'error') icon = '<i class="fas fa-exclamation-triangle"></i> ';
 
             statusEl.innerHTML = icon + message;
         }
@@ -448,6 +587,10 @@
         // 🔄 CHECK EXISTING SESSION ON LOAD
         // =============================================
         window.onload = function () {
+            // Initialize Google Sign-In
+            initializeGoogleSignIn();
+
+            // Check for existing session
             const session = localStorage.getItem(CONFIG.SESSION_KEY);
 
             if (session) {
@@ -455,9 +598,7 @@
                     const data = JSON.parse(session);
                     const now = Math.floor(Date.now() / 1000);
 
-                    // Check if session is still valid (not expired)
                     if (data.exp && data.exp > now) {
-                        // Verify email is still in allowed list
                         const isStillAllowed = CONFIG.ALLOWED_EMAILS.some(
                             email => email.toLowerCase() === data.email.toLowerCase()
                         );
@@ -471,9 +612,7 @@
                         }
                     }
 
-                    // Session invalid or expired - clear it
                     localStorage.removeItem(CONFIG.SESSION_KEY);
-
                 } catch (e) {
                     localStorage.removeItem(CONFIG.SESSION_KEY);
                 }
@@ -481,11 +620,13 @@
         };
 
         // =============================================
-        // 🚪 LOGOUT FUNCTION (Can be called from webapp)
+        // 🚪 LOGOUT FUNCTION
         // =============================================
         function logout() {
             localStorage.removeItem(CONFIG.SESSION_KEY);
-            google.accounts.id.disableAutoSelect();
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.disableAutoSelect();
+            }
             window.location.reload();
         }
     </script>
