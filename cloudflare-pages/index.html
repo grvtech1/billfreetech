@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4F46E5">
+    <title>BillFree TechSupport - Login</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Sign-In -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #4338CA;
+            --accent: #667eea;
+            --success: #10B981;
+            --danger: #EF4444;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before,
+        .bg-animation::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-animation::before {
+            background: white;
+            top: -100px;
+            right: -100px;
+        }
+
+        .bg-animation::after {
+            background: white;
+            bottom: -150px;
+            left: -150px;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-30px) rotate(10deg);
+            }
+        }
+
+        /* Login Card */
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 40px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-gradient);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo-icon i {
+            font-size: 36px;
+            color: white;
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1E293B;
+            margin-bottom: 8px;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #E2E8F0, transparent);
+            margin: 32px 0;
+        }
+
+        .welcome-text {
+            font-size: 16px;
+            color: #475569;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        /* Google Sign-In Button Container */
+        #g_id_signin {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        /* Custom styled button as fallback */
+        .google-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: white;
+            color: #1E293B;
+            border: 2px solid #E2E8F0;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .google-btn:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Status Messages */
+        .status-container {
+            margin-top: 24px;
+            min-height: 60px;
+        }
+
+        .status-message {
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.loading {
+            background: #F0F9FF;
+            color: #0369A1;
+            border: 1px solid #BAE6FD;
+        }
+
+        .status-message.success {
+            background: #ECFDF5;
+            color: #047857;
+            border: 1px solid #A7F3D0;
+        }
+
+        .status-message.error {
+            background: #FEF2F2;
+            color: #B91C1C;
+            border: 1px solid #FECACA;
+        }
+
+        .status-message i {
+            margin-right: 8px;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #0369A1;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Security Badge */
+        .security-badge {
+            margin-top: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #94A3B8;
+        }
+
+        .security-badge i {
+            color: var(--success);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 24px;
+            font-size: 11px;
+            color: #94A3B8;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
+            }
+
+            .app-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animation"></div>
+
+    <div class="login-card">
+        <div class="logo-container">
+            <div class="logo-icon">
+                <i class="fas fa-headset"></i>
+            </div>
+            <h1 class="app-title">BillFree TechSupport</h1>
+            <p class="app-subtitle">Operations Dashboard v10.0</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p class="welcome-text">
+            Sign in with your authorized Google account to access the IT Support Dashboard.
+        </p>
+
+        <!-- Google One Tap / Sign-In Button -->
+        <div id="g_id_onload" data-client_id="694517401702-4oidkp8p8h9fcpkst0d76o7tn10r1vqq.apps.googleusercontent.com"
+            data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse"
+            data-auto_prompt="false">
+        </div>
+
+        <div id="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with"
+            data-size="large" data-logo_alignment="left" data-width="300">
+        </div>
+
+        <div class="status-container">
+            <div id="status-message" class="status-message"></div>
+        </div>
+
+        <div class="security-badge">
+            <i class="fas fa-shield-alt"></i>
+            <span>Secured with Google OAuth 2.0</span>
+        </div>
+
+        <div class="footer">
+            © 2026 BillFree Technologies. Authorized access only.
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // 🔐 ACCESS CONTROL CONFIGURATION
+        // =============================================
+        const CONFIG = {
+            // ✅ Allowed Email Addresses (Add/Remove as needed)
+            ALLOWED_EMAILS: [
+                'manjeetkashyap.billfree@gmail.com',
+                'suraj.billfree2@gmail.com',
+                'veer.billfree@gmail.com',
+                'gaurav@billfree.in',          // Add admin emails
+                'admin@billfree.in'            // Add more as needed
+            ],
+
+            // ✅ Apps Script Webapp URL (UPDATE THIS!)
+            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/exec',
+
+            // Session key for localStorage
+            SESSION_KEY: 'billfree_auth_session'
+        };
+
+        // =============================================
+        // 🔐 AUTHENTICATION HANDLER
+        // =============================================
+        function handleCredentialResponse(response) {
+            showStatus('loading', 'Verifying your credentials...');
+
+            try {
+                // Decode the JWT token
+                const payload = decodeJwtPayload(response.credential);
+
+                console.log('🔐 User authenticated:', payload.email);
+
+                // Check if email is in allowed list
+                const userEmail = payload.email.toLowerCase();
+                const isAllowed = CONFIG.ALLOWED_EMAILS.some(
+                    email => email.toLowerCase() === userEmail
+                );
+
+                if (isAllowed) {
+                    // ✅ Authorized User
+                    showStatus('success', `Welcome, ${payload.name}! Redirecting to dashboard...`);
+
+                    // Store session
+                    const session = {
+                        email: payload.email,
+                        name: payload.name,
+                        picture: payload.picture,
+                        exp: payload.exp,
+                        token: response.credential
+                    };
+                    localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
+
+                    // Redirect to Apps Script webapp after short delay
+                    setTimeout(() => {
+                        window.location.href = CONFIG.WEBAPP_URL;
+                    }, 1500);
+
+                } else {
+                    // ❌ Unauthorized User
+                    showStatus('error', `Access Denied. "${payload.email}" is not authorized to access this system.`);
+                    console.warn('⛔ Unauthorized access attempt:', payload.email);
+                }
+
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showStatus('error', 'Authentication failed. Please try again.');
+            }
+        }
+
+        // Decode JWT payload (base64)
+        function decodeJwtPayload(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        }
+
+        // Show status message
+        function showStatus(type, message) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.className = 'status-message show ' + type;
+
+            let icon = '';
+            if (type === 'loading') icon = '<span class="spinner"></span>';
+            else if (type === 'success') icon = '<i class="fas fa-check-circle"></i>';
+            else if (type === 'error') icon = '<i class="fas fa-exclamation-triangle"></i>';
+
+            statusEl.innerHTML = icon + message;
+        }
+
+        // =============================================
+        // 🔄 CHECK EXISTING SESSION ON LOAD
+        // =============================================
+        window.onload = function () {
+            const session = localStorage.getItem(CONFIG.SESSION_KEY);
+
+            if (session) {
+                try {
+                    const data = JSON.parse(session);
+                    const now = Math.floor(Date.now() / 1000);
+
+                    // Check if session is still valid (not expired)
+                    if (data.exp && data.exp > now) {
+                        // Verify email is still in allowed list
+                        const isStillAllowed = CONFIG.ALLOWED_EMAILS.some(
+                            email => email.toLowerCase() === data.email.toLowerCase()
+                        );
+
+                        if (isStillAllowed) {
+                            showStatus('success', `Welcome back, ${data.name}! Redirecting...`);
+                            setTimeout(() => {
+                                window.location.href = CONFIG.WEBAPP_URL;
+                            }, 1000);
+                            return;
+                        }
+                    }
+
+                    // Session invalid or expired - clear it
+                    localStorage.removeItem(CONFIG.SESSION_KEY);
+
+                } catch (e) {
+                    localStorage.removeItem(CONFIG.SESSION_KEY);
+                }
+            }
+        };
+
+        // =============================================
+        // 🚪 LOGOUT FUNCTION (Can be called from webapp)
+        // =============================================
+        function logout() {
+            localStorage.removeItem(CONFIG.SESSION_KEY);
+            google.accounts.id.disableAutoSelect();
+            window.location.reload();
+        }
+    </script>
+</body>
+
+</html>
