@@ -39,10 +39,8 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            overflow: hidden;
         }
 
-        /* Animated Background */
         .bg-animation {
             position: fixed;
             top: 0;
@@ -89,7 +87,6 @@
             }
         }
 
-        /* Login Card */
         .login-card {
             background: white;
             border-radius: 24px;
@@ -111,10 +108,6 @@
                 opacity: 1;
                 transform: translateY(0);
             }
-        }
-
-        .logo-container {
-            margin-bottom: 32px;
         }
 
         .logo-icon {
@@ -160,7 +153,6 @@
             line-height: 1.6;
         }
 
-        /* Custom Google Sign-In Button */
         .google-signin-btn {
             display: inline-flex;
             align-items: center;
@@ -177,7 +169,6 @@
             transition: all 0.3s ease;
             width: 100%;
             max-width: 300px;
-            margin: 0 auto;
         }
 
         .google-signin-btn:hover {
@@ -186,8 +177,9 @@
             transform: translateY(-2px);
         }
 
-        .google-signin-btn:active {
-            transform: translateY(0);
+        .google-signin-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .google-signin-btn svg {
@@ -195,13 +187,6 @@
             height: 20px;
         }
 
-        .google-signin-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Google Button Container (for SDK button) */
         #google-signin-container {
             display: flex;
             justify-content: center;
@@ -209,7 +194,6 @@
             min-height: 50px;
         }
 
-        /* Status Messages */
         .status-container {
             margin-top: 24px;
             min-height: 60px;
@@ -221,19 +205,6 @@
             font-size: 14px;
             font-weight: 500;
             display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .status-message.show {
@@ -258,11 +229,6 @@
             border: 1px solid #FECACA;
         }
 
-        .status-message i {
-            margin-right: 8px;
-        }
-
-        /* Loading Spinner */
         .spinner {
             display: inline-block;
             width: 16px;
@@ -281,7 +247,6 @@
             }
         }
 
-        /* Security Badge */
         .security-badge {
             margin-top: 32px;
             display: flex;
@@ -296,14 +261,12 @@
             color: var(--success);
         }
 
-        /* Footer */
         .footer {
             margin-top: 24px;
             font-size: 11px;
             color: #94A3B8;
         }
 
-        /* Responsive */
         @media (max-width: 480px) {
             .login-card {
                 padding: 32px 24px;
@@ -334,9 +297,7 @@
             Sign in with your authorized Google account to access the IT Support Dashboard.
         </p>
 
-        <!-- Google Sign-In Button Container -->
         <div id="google-signin-container">
-            <!-- Custom fallback button (shown by default) -->
             <button id="custom-google-btn" class="google-signin-btn" onclick="initiateGoogleSignIn()">
                 <svg viewBox="0 0 24 24">
                     <path fill="#4285F4"
@@ -371,75 +332,61 @@
 
     <script>
         // =============================================
-        // 🔐 ACCESS CONTROL CONFIGURATION
+        // 🔐 CONFIGURATION
         // =============================================
         const CONFIG = {
-            // ✅ Google OAuth Client ID
             CLIENT_ID: '694517401702-4oidkp8p8h9fcpkst0d76o7tn10r1vqq.apps.googleusercontent.com',
-            
-            // ✅ Allowed Email Addresses (Add/Remove as needed)
+
             ALLOWED_EMAILS: [
                 'manjeetkashyap.billfree@gmail.com',
                 'suraj.billfree2@gmail.com',
-                'veerail.com',
+                'veer.billfree@gmail.com',
                 'gaurav@billfree.in',
                 'admin@billfree.in'
             ],
 
-            // ✅ Apps Script Webapp URL
-            WEBAPP_URL:ript.google.com/macros/s/AKfycbzIN6tHiALv4KoiElfdmMpUn0O-T6UEXRCzXzqBQA1C59xrPiCYkXS7ri0MRqO8rHV-Yw/exec',
+            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbzIN6tHiALv4KoiElfdmMpUn0O-T6UEXRCzXzqBQA1C59xrPiCYkXS7ri0MRqO8rHV-Yw/exec',
 
-            // Session key for localStorage
             SESSION_KEY: 'billfree_auth_session'
         };
 
-        // Track if Google SDK is loaded
         let googleSDKLoaded = false;
         let tokenClient = null;
 
-        // ============================================ 🚀 INITIALIZE GOOGLE SIGN-IN
         // =============================================
-        function initializeGoogleSignIn() {(typeof google === 'undefined' || !google.accounts) {
-                citing for Google SDK...');
+        // 🚀 INITIALIZE GOOGLE SIGN-IN
+        // =============================================
+        function initializeGoogleSignIn() {
+            if (typeof google === 'undefined' || !google.accounts) {
+                console.log('⏳ Waiting for Google SDK...');
                 setTimeout(initializeGoogleSignIn, 100);
                 return;
             }
 
-            console.log('✅ Google SDK loaded, initializing...');
+            console.log('✅ Google SDK loaded');
             googleSDKLoaded = true;
 
-            // Initialize Google Ide           google.accounts.id.initialize({
+            google.accounts.id.initialize({
                 client_id: CONFIG.CLIENT_ID,
                 callback: handleCredentialResponse,
-                auto_select: false,cel_on_tap_outside: true
+                auto_select: false,
+                cancel_on_tap_outside: true
             });
 
-            // Try to render the Google button (optional - we have custom button)
             try {
                 google.accounts.id.renderButton(
                     document.getElementById('google-signin-container'),
-                    {
-                        type: 'standard',
-                        theme: 'outline',
-                        size: 'large',
-           signin_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left',
-                        width: 300
-                    }
+                    { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', logo_alignment: 'left', width: 300 }
                 );
-                // Hide gle button renders
-                const customBtn = document.getElementById('custom-google-btn');
-                if (customBtn) customBtn.style.display = 'none';
+                document.getElementById('custom-google-btn').style.display = 'none';
             } catch (e) {
-                console.log('Using custom button fallback');
+                console.log('Using custom button');
             }
 
-            // Initialiclient for popup flow
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CONFIG.CLIENT_ID,
                 scope: 'email profile',
-                callback:okenResponse
+                callback: handleTokenResponse
             });
         }
 
@@ -448,90 +395,88 @@
         // =============================================
         function initiateGoogleSignIn() {
             const btn = document.getElementById('custom-google-btn');
-            
+
             if (!googleSDKLoaded) {
                 showStatus('loading', 'Loading Google Sign-In...');
-                setTimeout(() => {
-                    if (googleSDKLo                        initiateGoogleSignIn();
+                setTimeout(function () {
+                    if (googleSDKLoaded) {
+                        initiateGoogleSignIn();
                     } else {
-                        showStatus('error', 'Google Sign-In failed to load. Please refresh the page.');
+                        showStatus('error', 'Google Sign-In failed to load. Please refresh.');
                     }
-          0);
+                }, 2000);
                 return;
             }
 
             btn.disabled = true;
             showStatus('loading', 'Opening Google Sign-In...');
 
-            // Try One Tap first
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() ||n.isSkippedMoment()) {
-                    console.log('One available, using popup...');
-                    // Fallback to OAuth2 popup
+            google.accounts.id.prompt(function (notification) {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    console.log('Using OAuth2 popup...');
                     if (tokenClient) {
                         tokenClient.requestAccessToken();
-                     }
+                    }
                 }
                 btn.disabled = false;
-            });        // =============================================
-        // 🔐 HANDLE CREDENTIAL RESPONSE (One Tap / Button)
-        // =======================================ion handleCredentialResponse(response) {
-            showStatus('loading', 'Verifying your credentials...');
+            });
+        }
 
+        // =============================================
+        // 🔐 HANDLE CREDENTIAL RESPONSE
+        // =============================================
+        function handleCredentialResponse(response) {
+            showStatus('loading', 'Verifying credentials...');
             try {
                 const payload = decodeJwtPayload(response.credential);
                 validateAndRedirect(payload, response.credential);
             } catch (error) {
-                console.error('Authentication error:', error);
-                shntication failed. Please try again.');
+                console.error('Auth error:', error);
+                showStatus('error', 'Authentication failed. Please try again.');
             }
         }
 
-        // =============================================
-        // 🔐 HANDLE TOKEN RESPONSE (OAuth2 Popup)
-        // =============================================
         function handleTokenResponse(response) {
             if (response.error) {
-                showStatus('error', 'Sign-in cancelled or failed.');
-                }
+                showStatus('error', 'Sign-in cancelled.');
+                return;
+            }
 
             showStatus('loading', 'Fetching user info...');
 
-            // Get user info using the access token
- tps://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${response.access_token}` }
-            }      .then(res => res.json())
-            .then(userInfo => {
-                const payload = {
-                    email: userInfo.email,
-                    name: userInfo.name,
-                    picture: userInfo.picture,
-                    exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour
-                };
-                validateAndRedirect(pay, r.access_token);
+            fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: 'Bearer ' + response.access_token }
             })
-            .catch(err => {
-                console.error('Failed to get user info:', err);
-                showStatus('error', 'Failed to verify user. Please try again.');
-            });
+                .then(function (res) { return res.json(); })
+                .then(function (userInfo) {
+                    const payload = {
+                        email: userInfo.email,
+                        name: userInfo.name,
+                        picture: userInfo.picture,
+                        exp: Math.floor(Date.now() / 1000) + 3600
+                    };
+                    validateAndRedirect(payload, response.access_token);
+                })
+                .catch(function (err) {
+                    console.error('Failed to get user info:', err);
+                    showStatus('error', 'Failed to verify user.');
+                });
         }
 
         // =============================================
         // ✅ VALIDATE USER AND REDIRECT
         // =============================================
         function validateAndRedirect(payload, token) {
-            console.log('🔐 User authenticated:', payload.email);
+            console.log('🔐 User:', payload.email);
 
             const userEmail = payload.email.toLowerCase();
-            const isAllowed = CONFIG.ALLOWED_EMAILS.some(
-                email => email.toLowerCase() === userEmail
-            );
+            const isAllowed = CONFIG.ALLOWED_EMAILS.some(function (email) {
+                return email.toLowerCase() === userEmail;
+            });
 
             if (isAllowed) {
-                // ✅ Authorized User
-                showStatus('success', `Welcome, ${payload.name}! Redirecting to dashboard...`);
+                showStatus('success', 'Welcome, ' + payload.name + '! Redirecting...');
 
-                // Store session
                 const session = {
                     email: payload.email,
                     name: payload.name,
@@ -541,41 +486,32 @@
                 };
                 localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
 
-                // Redirect to Apps Script webapp
-                setTimeout(() => {
+                setTimeout(function () {
                     window.location.href = CONFIG.WEBAPP_URL;
                 }, 1500);
-
             } else {
-                // ❌ Unauthorized User
-                showStatus('error', `Access Denied. "${payload.email}" is not authorized.`);
-                console.warn('⛔ Unauthorized access attempt:', payload.email);
+                showStatus('error', 'Access Denied. "' + payload.email + '" is not authorized.');
+                console.warn('⛔ Unauthorized:', payload.email);
             }
         }
 
         // =============================================
-        // 🔧 UTILITY FUNCTIONS
+        // 🔧 UTILITIES
         // =============================================
-        
-        // Decode JWT payload
         function decodeJwtPayload(token) {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-                atob(base64)
-                    .split('')
-                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                    .join('')
-            );
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
             return JSON.parse(jsonPayload);
         }
 
-        // Show status message
         function showStatus(type, message) {
-            const statusEl = document.getElementById('status-message');
+            var statusEl = document.getElementById('status-message');
             statusEl.className = 'status-message show ' + type;
 
-            let icon = '';
+            var icon = '';
             if (type === 'loading') icon = '<span class="spinner"></span>';
             else if (type === 'success') icon = '<i class="fas fa-check-circle"></i> ';
             else if (type === 'error') icon = '<i class="fas fa-exclamation-triangle"></i> ';
@@ -584,34 +520,30 @@
         }
 
         // =============================================
-        // 🔄 CHECK EXISTING SESSION ON LOAD
+        // 🔄 ON PAGE LOAD
         // =============================================
         window.onload = function () {
-            // Initialize Google Sign-In
             initializeGoogleSignIn();
 
-            // Check for existing session
-            const session = localStorage.getItem(CONFIG.SESSION_KEY);
-
+            var session = localStorage.getItem(CONFIG.SESSION_KEY);
             if (session) {
                 try {
-                    const data = JSON.parse(session);
-                    const now = Math.floor(Date.now() / 1000);
+                    var data = JSON.parse(session);
+                    var now = Math.floor(Date.now() / 1000);
 
                     if (data.exp && data.exp > now) {
-                        const isStillAllowed = CONFIG.ALLOWED_EMAILS.some(
-                            email => email.toLowerCase() === data.email.toLowerCase()
-                        );
+                        var isStillAllowed = CONFIG.ALLOWED_EMAILS.some(function (email) {
+                            return email.toLowerCase() === data.email.toLowerCase();
+                        });
 
                         if (isStillAllowed) {
-                            showStatus('success', `Welcome back, ${data.name}! Redirecting...`);
-                            setTimeout(() => {
+                            showStatus('success', 'Welcome back, ' + data.name + '! Redirecting...');
+                            setTimeout(function () {
                                 window.location.href = CONFIG.WEBAPP_URL;
                             }, 1000);
                             return;
                         }
                     }
-
                     localStorage.removeItem(CONFIG.SESSION_KEY);
                 } catch (e) {
                     localStorage.removeItem(CONFIG.SESSION_KEY);
@@ -619,9 +551,6 @@
             }
         };
 
-        // =============================================
-        // 🚪 LOGOUT FUNCTION
-        // =============================================
         function logout() {
             localStorage.removeItem(CONFIG.SESSION_KEY);
             if (typeof google !== 'undefined' && google.accounts) {
