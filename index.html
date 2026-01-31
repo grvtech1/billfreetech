@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4F46E5">
+    <title>BillFree TechSupport - Login</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #4338CA;
+            --accent: #667eea;
+            --success: #10B981;
+            --danger: #EF4444;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before,
+        .bg-animation::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-animation::before {
+            background: white;
+            top: -100px;
+            right: -100px;
+        }
+
+        .bg-animation::after {
+            background: white;
+            bottom: -150px;
+            left: -150px;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-30px) rotate(10deg);
+            }
+        }
+
+        /* Login Card */
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 40px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-gradient);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo-icon i {
+            font-size: 36px;
+            color: white;
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1E293B;
+            margin-bottom: 8px;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #E2E8F0, transparent);
+            margin: 32px 0;
+        }
+
+        .welcome-text {
+            font-size: 16px;
+            color: #475569;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        /* Custom Google Sign-In Button */
+        .google-signin-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: white;
+            color: #1E293B;
+            border: 2px solid #E2E8F0;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .google-signin-btn:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .google-signin-btn:active {
+            transform: translateY(0);
+        }
+
+        .google-signin-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .google-signin-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Google Button Container (for SDK button) */
+        #google-signin-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            min-height: 50px;
+        }
+
+        /* Status Messages */
+        .status-container {
+            margin-top: 24px;
+            min-height: 60px;
+        }
+
+        .status-message {
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.loading {
+            background: #F0F9FF;
+            color: #0369A1;
+            border: 1px solid #BAE6FD;
+        }
+
+        .status-message.success {
+            background: #ECFDF5;
+            color: #047857;
+            border: 1px solid #A7F3D0;
+        }
+
+        .status-message.error {
+            background: #FEF2F2;
+            color: #B91C1C;
+            border: 1px solid #FECACA;
+        }
+
+        .status-message i {
+            margin-right: 8px;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #0369A1;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Security Badge */
+        .security-badge {
+            margin-top: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #94A3B8;
+        }
+
+        .security-badge i {
+            color: var(--success);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 24px;
+            font-size: 11px;
+            color: #94A3B8;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
+            }
+
+            .app-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animation"></div>
+
+    <div class="login-card">
+        <div class="logo-container">
+            <div class="logo-icon">
+                <i class="fas fa-headset"></i>
+            </div>
+            <h1 class="app-title">BillFree TechSupport</h1>
+            <p class="app-subtitle">Operations Dashboard v10.0</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p class="welcome-text">
+            Sign in with your authorized Google account to access the IT Support Dashboard.
+        </p>
+
+        <!-- Google Sign-In Button Container -->
+        <div id="google-signin-container">
+            <!-- Custom fallback button (shown by default) -->
+            <button id="custom-google-btn" class="google-signin-btn" onclick="initiateGoogleSignIn()">
+                <svg viewBox="0 0 24 24">
+                    <path fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Sign in with Google
+            </button>
+        </div>
+
+        <div class="status-container">
+            <div id="status-message" class="status-message"></div>
+        </div>
+
+        <div class="security-badge">
+            <i class="fas fa-shield-alt"></i>
+            <span>Secured with Google OAuth 2.0</span>
+        </div>
+
+        <div class="footer">
+            © 2026 BillFree Technologies. Authorized access only.
+        </div>
+    </div>
+
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <script>
+        // =============================================
+        // 🔐 ACCESS CONTROL CONFIGURATION
+        // =============================================
+        const CONFIG = {
+            // ✅ Google OAuth Client ID
+            CLIENT_ID: '694517401702-4oidkp8p8h9fcpkst0d76o7tn10r1vqq.apps.googleusercontent.com',
+            
+            // ✅ Allowed Email Addresses (Add/Remove as needed)
+            ALLOWED_EMAILS: [
+                'manjeetkashyap.billfree@gmail.com',
+                'suraj.billfree2@gmail.com',
+                'veerail.com',
+                'gaurav@billfree.in',
+                'admin@billfree.in'
+            ],
+
+            // ✅ Apps Script Webapp URL
+            WEBAPP_URL:ript.google.com/macros/s/AKfycbzIN6tHiALv4KoiElfdmMpUn0O-T6UEXRCzXzqBQA1C59xrPiCYkXS7ri0MRqO8rHV-Yw/exec',
+
+            // Session key for localStorage
+            SESSION_KEY: 'billfree_auth_session'
+        };
+
+        // Track if Google SDK is loaded
+        let googleSDKLoaded = false;
+        let tokenClient = null;
+
+        // ============================================ 🚀 INITIALIZE GOOGLE SIGN-IN
+        // =============================================
+        function initializeGoogleSignIn() {(typeof google === 'undefined' || !google.accounts) {
+                citing for Google SDK...');
+                setTimeout(initializeGoogleSignIn, 100);
+                return;
+            }
+
+            console.log('✅ Google SDK loaded, initializing...');
+            googleSDKLoaded = true;
+
+            // Initialize Google Ide           google.accounts.id.initialize({
+                client_id: CONFIG.CLIENT_ID,
+                callback: handleCredentialResponse,
+                auto_select: false,cel_on_tap_outside: true
+            });
+
+            // Try to render the Google button (optional - we have custom button)
+            try {
+                google.accounts.id.renderButton(
+                    document.getElementById('google-signin-container'),
+                    {
+                        type: 'standard',
+                        theme: 'outline',
+                        size: 'large',
+           signin_with',
+                        shape: 'rectangular',
+                        logo_alignment: 'left',
+                        width: 300
+                    }
+                );
+                // Hide gle button renders
+                const customBtn = document.getElementById('custom-google-btn');
+                if (customBtn) customBtn.style.display = 'none';
+            } catch (e) {
+                console.log('Using custom button fallback');
+            }
+
+            // Initialiclient for popup flow
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CONFIG.CLIENT_ID,
+                scope: 'email profile',
+                callback:okenResponse
+            });
+        }
+
+        // =============================================
+        // 🔘 INITIATE GOOGLE SIGN-IN (Button Click)
+        // =============================================
+        function initiateGoogleSignIn() {
+            const btn = document.getElementById('custom-google-btn');
+            
+            if (!googleSDKLoaded) {
+                showStatus('loading', 'Loading Google Sign-In...');
+                setTimeout(() => {
+                    if (googleSDKLo                        initiateGoogleSignIn();
+                    } else {
+                        showStatus('error', 'Google Sign-In failed to load. Please refresh the page.');
+                    }
+          0);
+                return;
+            }
+
+            btn.disabled = true;
+            showStatus('loading', 'Opening Google Sign-In...');
+
+            // Try One Tap first
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() ||n.isSkippedMoment()) {
+                    console.log('One available, using popup...');
+                    // Fallback to OAuth2 popup
+                    if (tokenClient) {
+                        tokenClient.requestAccessToken();
+                     }
+                }
+                btn.disabled = false;
+            });        // =============================================
+        // 🔐 HANDLE CREDENTIAL RESPONSE (One Tap / Button)
+        // =======================================ion handleCredentialResponse(response) {
+            showStatus('loading', 'Verifying your credentials...');
+
+            try {
+                const payload = decodeJwtPayload(response.credential);
+                validateAndRedirect(payload, response.credential);
+            } catch (error) {
+                console.error('Authentication error:', error);
+                shntication failed. Please try again.');
+            }
+        }
+
+        // =============================================
+        // 🔐 HANDLE TOKEN RESPONSE (OAuth2 Popup)
+        // =============================================
+        function handleTokenResponse(response) {
+            if (response.error) {
+                showStatus('error', 'Sign-in cancelled or failed.');
+                }
+
+            showStatus('loading', 'Fetching user info...');
+
+            // Get user info using the access token
+ tps://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${response.access_token}` }
+            }      .then(res => res.json())
+            .then(userInfo => {
+                const payload = {
+                    email: userInfo.email,
+                    name: userInfo.name,
+                    picture: userInfo.picture,
+                    exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour
+                };
+                validateAndRedirect(pay, r.access_token);
+            })
+            .catch(err => {
+                console.error('Failed to get user info:', err);
+                showStatus('error', 'Failed to verify user. Please try again.');
+            });
+        }
+
+        // =============================================
+        // ✅ VALIDATE USER AND REDIRECT
+        // =============================================
+        function validateAndRedirect(payload, token) {
+            console.log('🔐 User authenticated:', payload.email);
+
+            const userEmail = payload.email.toLowerCase();
+            const isAllowed = CONFIG.ALLOWED_EMAILS.some(
+                email => email.toLowerCase() === userEmail
+            );
+
+            if (isAllowed) {
+                // ✅ Authorized User
+                showStatus('success', `Welcome, ${payload.name}! Redirecting to dashboard...`);
+
+                // Store session
+                const session = {
+                    email: payload.email,
+                    name: payload.name,
+                    picture: payload.picture,
+                    exp: payload.exp,
+                    token: token
+                };
+                localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
+
+                // Redirect to Apps Script webapp
+                setTimeout(() => {
+                    window.location.href = CONFIG.WEBAPP_URL;
+                }, 1500);
+
+            } else {
+                // ❌ Unauthorized User
+                showStatus('error', `Access Denied. "${payload.email}" is not authorized.`);
+                console.warn('⛔ Unauthorized access attempt:', payload.email);
+            }
+        }
+
+        // =============================================
+        // 🔧 UTILITY FUNCTIONS
+        // =============================================
+        
+        // Decode JWT payload
+        function decodeJwtPayload(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        }
+
+        // Show status message
+        function showStatus(type, message) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.className = 'status-message show ' + type;
+
+            let icon = '';
+            if (type === 'loading') icon = '<span class="spinner"></span>';
+            else if (type === 'success') icon = '<i class="fas fa-check-circle"></i> ';
+            else if (type === 'error') icon = '<i class="fas fa-exclamation-triangle"></i> ';
+
+            statusEl.innerHTML = icon + message;
+        }
+
+        // =============================================
+        // 🔄 CHECK EXISTING SESSION ON LOAD
+        // =============================================
+        window.onload = function () {
+            // Initialize Google Sign-In
+            initializeGoogleSignIn();
+
+            // Check for existing session
+            const session = localStorage.getItem(CONFIG.SESSION_KEY);
+
+            if (session) {
+                try {
+                    const data = JSON.parse(session);
+                    const now = Math.floor(Date.now() / 1000);
+
+                    if (data.exp && data.exp > now) {
+                        const isStillAllowed = CONFIG.ALLOWED_EMAILS.some(
+                            email => email.toLowerCase() === data.email.toLowerCase()
+                        );
+
+                        if (isStillAllowed) {
+                            showStatus('success', `Welcome back, ${data.name}! Redirecting...`);
+                            setTimeout(() => {
+                                window.location.href = CONFIG.WEBAPP_URL;
+                            }, 1000);
+                            return;
+                        }
+                    }
+
+                    localStorage.removeItem(CONFIG.SESSION_KEY);
+                } catch (e) {
+                    localStorage.removeItem(CONFIG.SESSION_KEY);
+                }
+            }
+        };
+
+        // =============================================
+        // 🚪 LOGOUT FUNCTION
+        // =============================================
+        function logout() {
+            localStorage.removeItem(CONFIG.SESSION_KEY);
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.disableAutoSelect();
+            }
+            window.location.reload();
+        }
+    </script>
+</body>
+
+</html>
