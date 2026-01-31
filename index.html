@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4F46E5">
-    <title>BillFree TechSupport - Login</title>
+    <title>BillFree TechSupport - Dashboard</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,6 +39,20 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+        }
+
+        body.dashboard-mode {
+            padding: 0;
+            background: #f5f7fa;
+        }
+
+        /* ===== LOGIN VIEW ===== */
+        #login-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100%;
         }
 
         .bg-animation {
@@ -267,6 +281,96 @@
             color: #94A3B8;
         }
 
+        /* ===== DASHBOARD VIEW ===== */
+        #dashboard-view {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .dashboard-header .brand i {
+            font-size: 20px;
+        }
+
+        .dashboard-header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dashboard-header .user-info img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dashboard-header .user-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .dashboard-frame {
+            flex: 1;
+            width: 100%;
+            border: none;
+        }
+
+        /* Loading overlay for iframe */
+        .iframe-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #64748B;
+        }
+
+        .iframe-loading .spinner-large {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #E2E8F0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
         @media (max-width: 480px) {
             .login-card {
                 padding: 32px 24px;
@@ -275,56 +379,85 @@
             .app-title {
                 font-size: 20px;
             }
+
+            .dashboard-header {
+                padding: 10px 16px;
+            }
+
+            .dashboard-header .user-name {
+                display: none;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="bg-animation"></div>
+    <!-- ===== LOGIN VIEW ===== -->
+    <div id="login-view">
+        <div class="bg-animation"></div>
 
-    <div class="login-card">
-        <div class="logo-container">
-            <div class="logo-icon">
-                <i class="fas fa-headset"></i>
+        <div class="login-card">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h1 class="app-title">BillFree TechSupport</h1>
+                <p class="app-subtitle">Operations Dashboard v10.0</p>
             </div>
-            <h1 class="app-title">BillFree TechSupport</h1>
-            <p class="app-subtitle">Operations Dashboard v10.0</p>
+
+            <div class="divider"></div>
+
+            <p class="welcome-text">
+                Sign in with your authorized Google account to access the IT Support Dashboard.
+            </p>
+
+            <div id="google-signin-container">
+                <button id="custom-google-btn" class="google-signin-btn" onclick="initiateGoogleSignIn()">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    Sign in with Google
+                </button>
+            </div>
+
+            <div class="status-container">
+                <div id="status-message" class="status-message"></div>
+            </div>
+
+            <div class="security-badge">
+                <i class="fas fa-shield-alt"></i>
+                <span>Secured with Google OAuth 2.0</span>
+            </div>
+
+            <div class="footer">
+                © 2026 BillFree Technologies. Authorized access only.
+            </div>
         </div>
+    </div>
 
-        <div class="divider"></div>
-
-        <p class="welcome-text">
-            Sign in with your authorized Google account to access the IT Support Dashboard.
-        </p>
-
-        <div id="google-signin-container">
-            <button id="custom-google-btn" class="google-signin-btn" onclick="initiateGoogleSignIn()">
-                <svg viewBox="0 0 24 24">
-                    <path fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                    <path fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Sign in with Google
-            </button>
-        </div>
-
-        <div class="status-container">
-            <div id="status-message" class="status-message"></div>
-        </div>
-
-        <div class="security-badge">
-            <i class="fas fa-shield-alt"></i>
-            <span>Secured with Google OAuth 2.0</span>
-        </div>
-
-        <div class="footer">
-            © 2026 BillFree Technologies. Authorized access only.
-        </div>
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <div id="dashboard-view">
+        <header class="dashboard-header">
+            <div class="brand">
+                <i class="fas fa-headset"></i>
+                <span>BillFree TechSupport</span>
+            </div>
+            <div class="user-info">
+                <img id="user-avatar" src="" alt="User">
+                <span id="user-display-name" class="user-name"></span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </header>
+        <iframe id="dashboard-frame" class="dashboard-frame" src="about:blank"></iframe>
     </div>
 
     <!-- Google Identity Services SDK -->
@@ -334,25 +467,49 @@
         // =============================================
         // 🔐 CONFIGURATION
         // =============================================
-        const CONFIG = {
+        var CONFIG = {
             CLIENT_ID: '694517401702-4oidkp8p8h9fcpkst0d76o7tn10r1vqq.apps.googleusercontent.com',
 
             ALLOWED_EMAILS: [
                 'manjeetkashyap.billfree@gmail.com',
-                'suraj.billfree2@gmail.com',
                 'neerajkumar.billfree@gmail.com',
+                'suraj.billfree2@gmail.com',
                 'veer.billfree@gmail.com',
                 'gaurav.pal@billfree.in',
                 'admin@billfree.in'
             ],
 
+            // Apps Script Webapp URL (loaded in iframe)
             WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbzIN6tHiALv4KoiElfdmMpUn0O-T6UEXRCzXzqBQA1C59xrPiCYkXS7ri0MRqO8rHV-Yw/exec',
 
             SESSION_KEY: 'billfree_auth_session'
         };
 
-        let googleSDKLoaded = false;
-        let tokenClient = null;
+        var googleSDKLoaded = false;
+        var tokenClient = null;
+
+        // =============================================
+        // 🖥️ VIEW MANAGEMENT
+        // =============================================
+        function showLoginView() {
+            document.getElementById('login-view').style.display = 'flex';
+            document.getElementById('dashboard-view').style.display = 'none';
+            document.body.classList.remove('dashboard-mode');
+        }
+
+        function showDashboardView(userData) {
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'flex';
+            document.body.classList.add('dashboard-mode');
+
+            // Set user info in header
+            document.getElementById('user-display-name').textContent = userData.name || userData.email;
+            document.getElementById('user-avatar').src = userData.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff';
+
+            // Load the Apps Script webapp in iframe
+            var frame = document.getElementById('dashboard-frame');
+            frame.src = CONFIG.WEBAPP_URL;
+        }
 
         // =============================================
         // 🚀 INITIALIZE GOOGLE SIGN-IN
@@ -392,10 +549,10 @@
         }
 
         // =============================================
-        // 🔘 INITIATE GOOGLE SIGN-IN (Button Click)
+        // 🔘 INITIATE GOOGLE SIGN-IN
         // =============================================
         function initiateGoogleSignIn() {
-            const btn = document.getElementById('custom-google-btn');
+            var btn = document.getElementById('custom-google-btn');
 
             if (!googleSDKLoaded) {
                 showStatus('loading', 'Loading Google Sign-In...');
@@ -424,13 +581,13 @@
         }
 
         // =============================================
-        // 🔐 HANDLE CREDENTIAL RESPONSE
+        // 🔐 HANDLE RESPONSES
         // =============================================
         function handleCredentialResponse(response) {
             showStatus('loading', 'Verifying credentials...');
             try {
-                const payload = decodeJwtPayload(response.credential);
-                validateAndRedirect(payload, response.credential);
+                var payload = decodeJwtPayload(response.credential);
+                validateAndShowDashboard(payload, response.credential);
             } catch (error) {
                 console.error('Auth error:', error);
                 showStatus('error', 'Authentication failed. Please try again.');
@@ -450,13 +607,13 @@
             })
                 .then(function (res) { return res.json(); })
                 .then(function (userInfo) {
-                    const payload = {
+                    var payload = {
                         email: userInfo.email,
                         name: userInfo.name,
                         picture: userInfo.picture,
                         exp: Math.floor(Date.now() / 1000) + 3600
                     };
-                    validateAndRedirect(payload, response.access_token);
+                    validateAndShowDashboard(payload, response.access_token);
                 })
                 .catch(function (err) {
                     console.error('Failed to get user info:', err);
@@ -465,20 +622,21 @@
         }
 
         // =============================================
-        // ✅ VALIDATE USER AND REDIRECT
+        // ✅ VALIDATE AND SHOW DASHBOARD
         // =============================================
-        function validateAndRedirect(payload, token) {
+        function validateAndShowDashboard(payload, token) {
             console.log('🔐 User:', payload.email);
 
-            const userEmail = payload.email.toLowerCase();
-            const isAllowed = CONFIG.ALLOWED_EMAILS.some(function (email) {
+            var userEmail = payload.email.toLowerCase();
+            var isAllowed = CONFIG.ALLOWED_EMAILS.some(function (email) {
                 return email.toLowerCase() === userEmail;
             });
 
             if (isAllowed) {
-                showStatus('success', 'Welcome, ' + payload.name + '! Redirecting...');
+                showStatus('success', 'Welcome, ' + payload.name + '! Loading dashboard...');
 
-                const session = {
+                // Store session
+                var session = {
                     email: payload.email,
                     name: payload.name,
                     picture: payload.picture,
@@ -487,9 +645,10 @@
                 };
                 localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
 
+                // Show dashboard after brief delay
                 setTimeout(function () {
-                    window.location.href = CONFIG.WEBAPP_URL;
-                }, 1500);
+                    showDashboardView(session);
+                }, 1000);
             } else {
                 showStatus('error', 'Access Denied. "' + payload.email + '" is not authorized.');
                 console.warn('⛔ Unauthorized:', payload.email);
@@ -526,6 +685,7 @@
         window.onload = function () {
             initializeGoogleSignIn();
 
+            // Check for existing session
             var session = localStorage.getItem(CONFIG.SESSION_KEY);
             if (session) {
                 try {
@@ -538,10 +698,8 @@
                         });
 
                         if (isStillAllowed) {
-                            showStatus('success', 'Welcome back, ' + data.name + '! Redirecting...');
-                            setTimeout(function () {
-                                window.location.href = CONFIG.WEBAPP_URL;
-                            }, 1000);
+                            // Auto-login: show dashboard directly
+                            showDashboardView(data);
                             return;
                         }
                     }
@@ -550,17 +708,22 @@
                     localStorage.removeItem(CONFIG.SESSION_KEY);
                 }
             }
+
+            // Show login view
+            showLoginView();
         };
 
+        // =============================================
+        // 🚪 LOGOUT
+        // =============================================
         function logout() {
             localStorage.removeItem(CONFIG.SESSION_KEY);
             if (typeof google !== 'undefined' && google.accounts) {
                 google.accounts.id.disableAutoSelect();
             }
-            window.location.reload();
+            showLoginView();
         }
     </script>
 </body>
 
 </html>
-
