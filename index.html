@@ -13,12 +13,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- 🚀 Performance: Font Awesome with preload -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style"
-        onload="this.onload=null;this.rel='stylesheet'">
-    <noscript>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </noscript>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         * {
@@ -403,7 +399,7 @@
 
         <div class="login-card">
             <div class="logo-container">
-                <div class="logo-icon" aria-hidden="true">
+                <div class="logo-icon">
                     <i class="fas fa-headset"></i>
                 </div>
                 <h1 class="app-title">BillFree TechSupport</h1>
@@ -433,12 +429,10 @@
             </div>
 
             <div class="status-container">
-                <!-- ♿ ARIA Live Region for screen readers -->
-                <div id="status-message" class="status-message" role="status" aria-live="polite" aria-atomic="true">
-                </div>
+                <div id="status-message" class="status-message"></div>
             </div>
 
-            <div class="security-badge" aria-hidden="true">
+            <div class="security-badge">
                 <i class="fas fa-shield-alt"></i>
                 <span>Secured with Google OAuth 2.0</span>
             </div>
@@ -457,10 +451,10 @@
                 <span>BillFree TechSupport</span>
             </div>
             <div class="user-info">
-                <img id="user-avatar" src="" alt="User profile picture">
+                <img id="user-avatar" src="" alt="User">
                 <span id="user-display-name" class="user-name"></span>
-                <button class="logout-btn" onclick="logout()" aria-label="Log out of dashboard">
-                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
             </div>
         </header>
@@ -483,22 +477,11 @@
                 'suraj.billfree2@gmail.com',
                 'veer.billfree@gmail.com',
                 'gaurav.pal@billfree.in',
-                'admin@billfree.in'
+                'protomacgorav@gmail.com'
             ],
 
-            // 🎯 EMAIL TO AGENT MAPPING (synced with AGENT_DIRECTORY in Code.gs)
-            // Maps logged-in user's email to their agent name for auto-selection
-            AGENT_EMAIL_MAP: {
-                'manjeetkashyap.billfree@gmail.com': 'Manjeet',
-                'suraj.billfree2@gmail.com': 'Suraj',
-                'veer.billfree@gmail.com': 'Veer Bahadur',
-                'neerajkumar.billfree@gmail.com': 'Neeraj Kumar',
-                'gaurav.pal@billfree.in': 'Admin',
-                'admin@billfree.in': 'Admin2'
-            },
-
             // Apps Script Webapp URL (loaded in iframe)
-            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbwWV3ytvqiFlf5vc4K3bp8_aVhsuMSnJbnQFwvHCtlNNch_Bpa2K9OzP5wvDB_RhJ59TA/exec',
+            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbyfik55RGhWqtXx93ljsjrVSmvEguuvqjf5YQ6c-1jCC8kWRrRTF1ebiG0sL_v6QWN7Mw/exec',
 
             SESSION_KEY: 'billfree_auth_session'
         };
@@ -526,68 +509,8 @@
 
             // Load the Apps Script webapp in iframe
             var frame = document.getElementById('dashboard-frame');
-
-            // 🔗 Send user context to iframe when it loads
-            frame.onload = function () {
-                sendUserContextToIframe(userData);
-                console.log('📧 Sent user context to iframe');
-            };
-
             frame.src = CONFIG.WEBAPP_URL;
         }
-
-        // =============================================
-        // 📬 POSTMESSAGE: SEND USER CONTEXT TO IFRAME
-        // =============================================
-        /**
-         * Sends authenticated user's email and agent info to the Apps Script iframe
-         * This enables auto-filling the Create Ticket modal with user context
-         */
-        function sendUserContextToIframe(userData) {
-            var frame = document.getElementById('dashboard-frame');
-            if (!frame || !frame.contentWindow) {
-                console.warn('⚠️ Could not send context: iframe not ready');
-                return;
-            }
-
-            var userEmail = (userData.email || '').toLowerCase();
-            var agentName = CONFIG.AGENT_EMAIL_MAP[userEmail] || '';
-
-            var contextPayload = {
-                type: 'BILLFREE_USER_CONTEXT',
-                email: userData.email || '',
-                name: userData.name || '',
-                picture: userData.picture || '',
-                agent: agentName,
-                timestamp: Date.now()
-            };
-
-            // Send to iframe (use specific origin in production for security)
-            frame.contentWindow.postMessage(contextPayload, '*');
-            console.log('✅ User context sent:', contextPayload.email, '→', contextPayload.agent || '(no agent mapping)');
-
-            // Retry after a short delay to ensure iframe JS is loaded
-            setTimeout(function () {
-                if (frame.contentWindow) {
-                    frame.contentWindow.postMessage(contextPayload, '*');
-                }
-            }, 2000);
-        }
-
-        // 🔄 Listen for context requests from iframe (in case it loads late)
-        window.addEventListener('message', function (event) {
-            if (event.data && event.data.type === 'REQUEST_USER_CONTEXT') {
-                var session = localStorage.getItem(CONFIG.SESSION_KEY);
-                if (session) {
-                    try {
-                        var userData = JSON.parse(session);
-                        sendUserContextToIframe(userData);
-                    } catch (e) {
-                        console.error('Failed to parse session for context request:', e);
-                    }
-                }
-            }
-        });
 
         // =============================================
         // 🚀 INITIALIZE GOOGLE SIGN-IN
@@ -805,4 +728,12 @@
 </body>
 
 </html>
+
+
+
+
+
+
+
+
 
