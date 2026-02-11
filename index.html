@@ -13,8 +13,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 🚀 Performance: Font Awesome with preload -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </noscript>
 
     <style>
         * {
@@ -399,7 +403,7 @@
 
         <div class="login-card">
             <div class="logo-container">
-                <div class="logo-icon">
+                <div class="logo-icon" aria-hidden="true">
                     <i class="fas fa-headset"></i>
                 </div>
                 <h1 class="app-title">BillFree TechSupport</h1>
@@ -429,10 +433,12 @@
             </div>
 
             <div class="status-container">
-                <div id="status-message" class="status-message"></div>
+                <!-- ♿ ARIA Live Region for screen readers -->
+                <div id="status-message" class="status-message" role="status" aria-live="polite" aria-atomic="true">
+                </div>
             </div>
 
-            <div class="security-badge">
+            <div class="security-badge" aria-hidden="true">
                 <i class="fas fa-shield-alt"></i>
                 <span>Secured with Google OAuth 2.0</span>
             </div>
@@ -451,10 +457,10 @@
                 <span>BillFree TechSupport</span>
             </div>
             <div class="user-info">
-                <img id="user-avatar" src="" alt="User">
+                <img id="user-avatar" src="" alt="User profile picture">
                 <span id="user-display-name" class="user-name"></span>
-                <button class="logout-btn" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+                <button class="logout-btn" onclick="logout()" aria-label="Log out of dashboard">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
                 </button>
             </div>
         </header>
@@ -477,11 +483,11 @@
                 'suraj.billfree2@gmail.com',
                 'veer.billfree@gmail.com',
                 'gaurav.pal@billfree.in',
-                'protomacgorav@gmail.com'
+                'admin@billfree.in'
             ],
 
             // Apps Script Webapp URL (loaded in iframe)
-            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbxqpvRC8B1QYI5M6E4V8p0Ekxb_vd9cvQWbR79NbyRQl3cFFNaaoGVoBnjCrA83REQBdg/exec',
+            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbwzI91oAJ8xKxqKrx_HjcE7EUKRj9LRTHZo5OGl9lLcoT28l273U4UVFoBeWeS5Wa8OsA/exec',
 
             SESSION_KEY: 'billfree_auth_session'
         };
@@ -724,17 +730,58 @@
             }
             showLoginView();
         }
+        // =============================================
+        // 📧 POSTMESSAGE BRIDGE: Share session with iframe
+        // Secure cross-origin communication for auto email/agent
+        // =============================================
+        window.addEventListener('message', function (event) {
+            // Security: Only respond to requests from Apps Script domains
+            var allowedOrigins = [
+                'https://script.google.com',
+                'https://script.googleusercontent.com'
+            ];
+
+            // Allow any Google Apps Script origin (they use dynamic subdomains)
+            var isAllowed = allowedOrigins.some(function (origin) {
+                return event.origin.startsWith(origin) || event.origin.indexOf('googleusercontent.com') !== -1;
+            });
+
+            if (!isAllowed) {
+                console.log('⚠️ postMessage from untrusted origin:', event.origin);
+                return;
+            }
+
+            // Handle email request from iframe
+            if (event.data && event.data.type === 'REQUEST_USER_SESSION') {
+                console.log('📧 Iframe requested user session');
+
+                var session = localStorage.getItem(CONFIG.SESSION_KEY);
+                var responseData = { type: 'USER_SESSION_RESPONSE', success: false };
+
+                if (session) {
+                    try {
+                        var data = JSON.parse(session);
+                        responseData = {
+                            type: 'USER_SESSION_RESPONSE',
+                            success: true,
+                            email: data.email || '',
+                            name: data.name || '',
+                            picture: data.picture || ''
+                        };
+                        console.log('✅ Sending session to iframe:', data.email);
+                    } catch (e) {
+                        console.error('❌ Failed to parse session:', e);
+                    }
+                }
+
+                // Send response back to the iframe
+                var frame = document.getElementById('dashboard-frame');
+                if (frame && frame.contentWindow) {
+                    frame.contentWindow.postMessage(responseData, '*');
+                }
+            }
+        });
     </script>
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
