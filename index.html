@@ -487,7 +487,7 @@
             ],
 
             // Apps Script Webapp URL (loaded in iframe)
-            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbwzI91oAJ8xKxqKrx_HjcE7EUKRj9LRTHZo5OGl9lLcoT28l273U4UVFoBeWeS5Wa8OsA/exec',
+            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbxVRdQLLZzWMBD1OFgW5VtWw5z17TSQQ6Gdqc3Xq2Ga0yE7T06o7sxfIUGOLFv6qYo2ww/exec',
 
             SESSION_KEY: 'billfree_auth_session'
         };
@@ -514,8 +514,13 @@
             document.getElementById('user-avatar').src = userData.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff';
 
             // Load the Apps Script webapp in iframe
+            // 📧 Pass user identity via URL parameters for auto-fill
             var frame = document.getElementById('dashboard-frame');
-            frame.src = CONFIG.WEBAPP_URL;
+            var iframeUrl = CONFIG.WEBAPP_URL
+                + '?userEmail=' + encodeURIComponent(userData.email || '')
+                + '&userName=' + encodeURIComponent(userData.name || '');
+            frame.src = iframeUrl;
+            console.log('🔗 Loading iframe with user params:', userData.email);
         }
 
         // =============================================
