@@ -511,14 +511,10 @@
             document.getElementById('user-display-name').textContent = userData.name || userData.email;
             document.getElementById('user-avatar').src = userData.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff';
 
-            // Load the Apps Script webapp in iframe
-            // 📧 Pass user identity via URL parameters for auto-fill
+            // Load the Apps Script webapp in iframe (identity resolved server-side).
             var frame = document.getElementById('dashboard-frame');
-            var iframeUrl = CONFIG.WEBAPP_URL
-                + '?userEmail=' + encodeURIComponent(userData.email || '')
-                + '&userName=' + encodeURIComponent(userData.name || '');
-            frame.src = iframeUrl;
-            console.log('🔗 Loading iframe with user params:', userData.email);
+            frame.src = CONFIG.WEBAPP_URL;
+            console.log('🔗 Loading iframe');
         }
 
         // =============================================
@@ -650,8 +646,7 @@
                     email: payload.email,
                     name: payload.name,
                     picture: payload.picture,
-                    exp: payload.exp,
-                    token: token
+                    exp: payload.exp
                 };
                 localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
 
@@ -739,15 +734,13 @@
         // =============================================
         window.addEventListener('message', function (event) {
             // Security: Only respond to requests from Apps Script domains
-            var allowedOrigins = [
-                'https://script.google.com',
-                'https://script.googleusercontent.com'
-            ];
-
-            // Allow any Google Apps Script origin (they use dynamic subdomains)
-            var isAllowed = allowedOrigins.some(function (origin) {
-                return event.origin.startsWith(origin) || event.origin.indexOf('googleusercontent.com') !== -1;
-            });
+            var trustedOrigins = [];
+            try {
+                var scriptOrigin = new URL(CONFIG.WEBAPP_URL).origin;
+                trustedOrigins.push(scriptOrigin);
+            } catch (_) { }
+            trustedOrigins.push('https://script.google.com', 'https://script.googleusercontent.com');
+            var isAllowed = trustedOrigins.indexOf(event.origin) !== -1;
 
             if (!isAllowed) {
                 console.log('⚠️ postMessage from untrusted origin:', event.origin);
@@ -780,7 +773,7 @@
                 // Send response back to the iframe
                 var frame = document.getElementById('dashboard-frame');
                 if (frame && frame.contentWindow) {
-                    frame.contentWindow.postMessage(responseData, '*');
+                    frame.contentWindow.postMessage(responseData, event.origin);
                 }
             }
         });
@@ -788,23 +781,3 @@
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
