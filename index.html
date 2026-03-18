@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4F46E5">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://accounts.google.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; frame-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests">
     <link rel="icon" type="image/png" href="favicon.png">
     <title>BillFree TechSupport - Dashboard</title>
 
@@ -444,7 +446,7 @@
             </div>
 
             <div class="footer">
-                © 2026 BillFree Technologies. Authorized access only.
+                &copy; 2026 BillFree Technologies. Authorized access only.
             </div>
         </div>
     </div>
@@ -464,319 +466,680 @@
                 </button>
             </div>
         </header>
-        <iframe id="dashboard-frame" class="dashboard-frame" src="about:blank"></iframe>
+        <iframe id="dashboard-frame" class="dashboard-frame" src="about:blank" title="BillFree TechSupport Dashboard"
+            referrerpolicy="strict-origin-when-cross-origin"></iframe>
     </div>
 
     <!-- Google Identity Services SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <script>
-        // =============================================
-        // 🔐 CONFIGURATION
-        // =============================================
-        var CONFIG = {
-            CLIENT_ID: '694517401702-4oidkp8p8h9fcpkst0d76o7tn10r1vqq.apps.googleusercontent.com',
+        (function () {
+            'use strict';
 
-            ALLOWED_EMAILS: [
-                'neerajkumar.billfree@gmail.com',
-                'suraj.billfree2@gmail.com',
-                'veer.billfree@gmail.com',
-                'gaurav.pal@billfree.in'
-            ],
-
-            // Apps Script Webapp URL (loaded in iframe)
-            WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbyF01ydrebAMHq6xXdQMcSsBIRr6h5AUg7Q_cazeC1ba8DJFTwaabA8XVK6T-GInNQLqQ/exec',
-
-            SESSION_KEY: 'billfree_auth_session'
-        };
-
-        var googleSDKLoaded = false;
-        var tokenClient = null;
-
-        // =============================================
-        // 🖥️ VIEW MANAGEMENT
-        // =============================================
-        function showLoginView() {
-            document.getElementById('login-view').style.display = 'flex';
-            document.getElementById('dashboard-view').style.display = 'none';
-            document.body.classList.remove('dashboard-mode');
-        }
-
-        function showDashboardView(userData) {
-            document.getElementById('login-view').style.display = 'none';
-            document.getElementById('dashboard-view').style.display = 'flex';
-            document.body.classList.add('dashboard-mode');
-
-            // Set user info in header
-            document.getElementById('user-display-name').textContent = userData.name || userData.email;
-            document.getElementById('user-avatar').src = userData.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff';
-
-            // Load the Apps Script webapp in iframe (identity resolved server-side).
-            var frame = document.getElementById('dashboard-frame');
-            frame.src = CONFIG.WEBAPP_URL;
-            console.log('🔗 Loading iframe');
-        }
-
-        // =============================================
-        // 🚀 INITIALIZE GOOGLE SIGN-IN
-        // =============================================
-        function initializeGoogleSignIn() {
-            if (typeof google === 'undefined' || !google.accounts) {
-                console.log('⏳ Waiting for Google SDK...');
-                setTimeout(initializeGoogleSignIn, 100);
-                return;
-            }
-
-            console.log('✅ Google SDK loaded');
-            googleSDKLoaded = true;
-
-            google.accounts.id.initialize({
-                client_id: CONFIG.CLIENT_ID,
-                callback: handleCredentialResponse,
-                auto_select: false,
-                cancel_on_tap_outside: true
+            var CONFIG = Object.freeze({
+                CLIENT_ID: '694517401702-4oidkp8p8h9fcpkst0d76o7tn10r1vqq.apps.googleusercontent.com',
+                ALLOWED_EMAILS: Object.freeze([
+                    'neerajkumar.billfree@gmail.com',
+                    'suraj.billfree2@gmail.com',
+                    'veer.billfree@gmail.com',
+                    'gaurav.pal@billfree.in'
+                ]),
+                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbyF01ydrebAMHq6xXdQMcSsBIRr6h5AUg7Q_cazeC1ba8DJFTwaabA8XVK6T-GInNQLqQ/exec',
+                SESSION_KEY: 'billfree_auth_session_v2',
+                LEGACY_SESSION_KEY: 'billfree_auth_session',
+                SESSION_MAX_AGE_SECONDS: 3600,
+                TOKEN_SKEW_SECONDS: 60,
+                NETWORK_TIMEOUT_MS: 10000
             });
 
-            try {
-                google.accounts.id.renderButton(
-                    document.getElementById('google-signin-container'),
-                    { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', logo_alignment: 'left', width: 300 }
-                );
-                document.getElementById('custom-google-btn').style.display = 'none';
-            } catch (e) {
-                console.log('Using custom button');
+            var STATE = {
+                googleSDKLoaded: false,
+                tokenClient: null
+            };
+
+            var TRUSTED_ORIGINS = buildTrustedOrigins_();
+            var ALLOWED_EMAIL_SET = new Set(
+                CONFIG.ALLOWED_EMAILS.map(normalizeEmail_).filter(Boolean)
+            );
+
+            function normalizeEmail_(email) {
+                return String(email || '').trim().toLowerCase();
             }
 
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CONFIG.CLIENT_ID,
-                scope: 'email profile',
-                callback: handleTokenResponse
-            });
-        }
-
-        // =============================================
-        // 🔘 INITIATE GOOGLE SIGN-IN
-        // =============================================
-        function initiateGoogleSignIn() {
-            var btn = document.getElementById('custom-google-btn');
-
-            if (!googleSDKLoaded) {
-                showStatus('loading', 'Loading Google Sign-In...');
-                setTimeout(function () {
-                    if (googleSDKLoaded) {
-                        initiateGoogleSignIn();
-                    } else {
-                        showStatus('error', 'Google Sign-In failed to load. Please refresh.');
-                    }
-                }, 2000);
-                return;
+            function isAllowedEmail_(email) {
+                return ALLOWED_EMAIL_SET.has(normalizeEmail_(email));
             }
 
-            btn.disabled = true;
-            showStatus('loading', 'Opening Google Sign-In...');
+            function nowSec_() {
+                return Math.floor(Date.now() / 1000);
+            }
 
-            google.accounts.id.prompt(function (notification) {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    console.log('Using OAuth2 popup...');
-                    if (tokenClient) {
-                        tokenClient.requestAccessToken();
-                    }
+            function safeText_(value, maxLen) {
+                var text = String(value == null ? '' : value)
+                    .replace(/[\u0000-\u001F\u007F]/g, '')
+                    .trim();
+                if (maxLen && text.length > maxLen) {
+                    return text.slice(0, maxLen);
                 }
-                btn.disabled = false;
-            });
-        }
-
-        // =============================================
-        // 🔐 HANDLE RESPONSES
-        // =============================================
-        function handleCredentialResponse(response) {
-            showStatus('loading', 'Verifying credentials...');
-            try {
-                var payload = decodeJwtPayload(response.credential);
-                validateAndShowDashboard(payload, response.credential);
-            } catch (error) {
-                console.error('Auth error:', error);
-                showStatus('error', 'Authentication failed. Please try again.');
-            }
-        }
-
-        function handleTokenResponse(response) {
-            if (response.error) {
-                showStatus('error', 'Sign-in cancelled.');
-                return;
+                return text;
             }
 
-            showStatus('loading', 'Fetching user info...');
-
-            fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: 'Bearer ' + response.access_token }
-            })
-                .then(function (res) { return res.json(); })
-                .then(function (userInfo) {
-                    var payload = {
-                        email: userInfo.email,
-                        name: userInfo.name,
-                        picture: userInfo.picture,
-                        exp: Math.floor(Date.now() / 1000) + 3600
-                    };
-                    validateAndShowDashboard(payload, response.access_token);
-                })
-                .catch(function (err) {
-                    console.error('Failed to get user info:', err);
-                    showStatus('error', 'Failed to verify user.');
-                });
-        }
-
-        // =============================================
-        // ✅ VALIDATE AND SHOW DASHBOARD
-        // =============================================
-        function validateAndShowDashboard(payload, token) {
-            console.log('🔐 User:', payload.email);
-
-            var userEmail = payload.email.toLowerCase();
-            var isAllowed = CONFIG.ALLOWED_EMAILS.some(function (email) {
-                return email.toLowerCase() === userEmail;
-            });
-
-            if (isAllowed) {
-                showStatus('success', 'Welcome, ' + payload.name + '! Loading dashboard...');
-
-                // Store session
-                var session = {
-                    email: payload.email,
-                    name: payload.name,
-                    picture: payload.picture,
-                    exp: payload.exp
-                };
-                localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
-
-                // Show dashboard after brief delay
-                setTimeout(function () {
-                    showDashboardView(session);
-                }, 1000);
-            } else {
-                showStatus('error', 'Access Denied. "' + payload.email + '" is not authorized.');
-                console.warn('⛔ Unauthorized:', payload.email);
-            }
-        }
-
-        // =============================================
-        // 🔧 UTILITIES
-        // =============================================
-        function decodeJwtPayload(token) {
-            var base64Url = token.split('.')[1];
-            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        }
-
-        function showStatus(type, message) {
-            var statusEl = document.getElementById('status-message');
-            statusEl.className = 'status-message show ' + type;
-
-            var icon = '';
-            if (type === 'loading') icon = '<span class="spinner"></span>';
-            else if (type === 'success') icon = '<i class="fas fa-check-circle"></i> ';
-            else if (type === 'error') icon = '<i class="fas fa-exclamation-triangle"></i> ';
-
-            statusEl.innerHTML = icon + message;
-        }
-
-        // =============================================
-        // 🔄 ON PAGE LOAD
-        // =============================================
-        window.onload = function () {
-            initializeGoogleSignIn();
-
-            // Check for existing session
-            var session = localStorage.getItem(CONFIG.SESSION_KEY);
-            if (session) {
+            function safeImageUrl_(url) {
                 try {
-                    var data = JSON.parse(session);
-                    var now = Math.floor(Date.now() / 1000);
+                    var parsed = new URL(String(url || ''));
+                    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                        return parsed.href;
+                    }
+                } catch (_) { }
+                return '';
+            }
 
-                    if (data.exp && data.exp > now) {
-                        var isStillAllowed = CONFIG.ALLOWED_EMAILS.some(function (email) {
-                            return email.toLowerCase() === data.email.toLowerCase();
-                        });
+            function showLoginView() {
+                document.getElementById('login-view').style.display = 'flex';
+                document.getElementById('dashboard-view').style.display = 'none';
+                document.body.classList.remove('dashboard-mode');
 
-                        if (isStillAllowed) {
-                            // Auto-login: show dashboard directly
-                            showDashboardView(data);
+                var frame = document.getElementById('dashboard-frame');
+                if (frame && frame.src !== 'about:blank') {
+                    frame.src = 'about:blank';
+                }
+            }
+
+            function showDashboardView(userData) {
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('dashboard-view').style.display = 'flex';
+                document.body.classList.add('dashboard-mode');
+
+                document.getElementById('user-display-name').textContent = safeText_(userData.name || userData.email, 120);
+                document.getElementById('user-avatar').src = safeImageUrl_(userData.picture) ||
+                    ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff');
+
+                var frame = document.getElementById('dashboard-frame');
+                frame.src = CONFIG.WEBAPP_URL;
+            }
+
+            function clearStatus() {
+                var statusEl = document.getElementById('status-message');
+                statusEl.className = 'status-message';
+                while (statusEl.firstChild) {
+                    statusEl.removeChild(statusEl.firstChild);
+                }
+            }
+
+            function showStatus(type, message) {
+                var statusEl = document.getElementById('status-message');
+                var resolvedType = String(type || 'loading').toLowerCase();
+                statusEl.className = 'status-message show ' + resolvedType;
+
+                while (statusEl.firstChild) {
+                    statusEl.removeChild(statusEl.firstChild);
+                }
+
+                if (resolvedType === 'loading') {
+                    var spinner = document.createElement('span');
+                    spinner.className = 'spinner';
+                    spinner.setAttribute('aria-hidden', 'true');
+                    statusEl.appendChild(spinner);
+                } else if (resolvedType === 'success' || resolvedType === 'error') {
+                    var icon = document.createElement('i');
+                    icon.className = resolvedType === 'success'
+                        ? 'fas fa-check-circle'
+                        : 'fas fa-exclamation-triangle';
+                    icon.setAttribute('aria-hidden', 'true');
+                    statusEl.appendChild(icon);
+                    statusEl.appendChild(document.createTextNode(' '));
+                }
+
+                statusEl.appendChild(document.createTextNode(safeText_(message, 240)));
+            }
+
+            function setSignInBusy_(busy) {
+                var btn = document.getElementById('custom-google-btn');
+                if (btn) btn.disabled = !!busy;
+            }
+
+            function buildTrustedOrigins_() {
+                var origins = new Set([
+                    'https://script.google.com',
+                    'https://script.googleusercontent.com'
+                ]);
+                try {
+                    origins.add(new URL(CONFIG.WEBAPP_URL).origin);
+                } catch (_) { }
+                return origins;
+            }
+
+            function readStoredSession_() {
+                var raw = null;
+                try {
+                    raw = sessionStorage.getItem(CONFIG.SESSION_KEY);
+                } catch (_) { }
+
+                if (!raw) {
+                    try {
+                        raw = localStorage.getItem(CONFIG.SESSION_KEY);
+                    } catch (_) { }
+                }
+                if (!raw) {
+                    try {
+                        raw = localStorage.getItem(CONFIG.LEGACY_SESSION_KEY);
+                    } catch (_) { }
+                }
+
+                if (!raw) return null;
+                try {
+                    return JSON.parse(raw);
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function clearStoredSession_() {
+                try {
+                    sessionStorage.removeItem(CONFIG.SESSION_KEY);
+                } catch (_) { }
+                try {
+                    sessionStorage.removeItem(CONFIG.LEGACY_SESSION_KEY);
+                } catch (_) { }
+                try {
+                    localStorage.removeItem(CONFIG.SESSION_KEY);
+                } catch (_) { }
+                try {
+                    localStorage.removeItem(CONFIG.LEGACY_SESSION_KEY);
+                } catch (_) { }
+            }
+
+            function writeStoredSession_(session) {
+                try {
+                    sessionStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
+                } catch (_) { }
+                try {
+                    localStorage.removeItem(CONFIG.SESSION_KEY);
+                } catch (_) { }
+                try {
+                    localStorage.removeItem(CONFIG.LEGACY_SESSION_KEY);
+                } catch (_) { }
+            }
+
+            function isSessionShapeValid_(session) {
+                return !!(
+                    session &&
+                    typeof session === 'object' &&
+                    typeof session.email === 'string' &&
+                    typeof session.provider === 'string' &&
+                    typeof session.token === 'string' &&
+                    Number.isFinite(Number(session.exp))
+                );
+            }
+
+            function isSessionFresh_(session) {
+                return Number(session.exp) > (nowSec_() + CONFIG.TOKEN_SKEW_SECONDS);
+            }
+
+            function buildSession_(identity) {
+                return {
+                    v: 2,
+                    email: normalizeEmail_(identity.email),
+                    name: safeText_(identity.name || identity.email, 120),
+                    picture: safeImageUrl_(identity.picture),
+                    exp: Number(identity.exp || (nowSec_() + CONFIG.SESSION_MAX_AGE_SECONDS)),
+                    provider: String(identity.provider || ''),
+                    token: String(identity.token || ''),
+                    issuedAt: nowSec_()
+                };
+            }
+
+            function decodeJwtPayload(token) {
+                if (!token || typeof token !== 'string') {
+                    throw new Error('Missing ID token.');
+                }
+                var parts = token.split('.');
+                if (parts.length < 2) {
+                    throw new Error('Invalid ID token format.');
+                }
+                var base64Url = parts[1];
+                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+                var jsonPayload = decodeURIComponent(
+                    atob(base64)
+                        .split('')
+                        .map(function (c) {
+                            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                        })
+                        .join('')
+                );
+                return JSON.parse(jsonPayload);
+            }
+
+            function waitForGoogleSDK_(maxWaitMs) {
+                return new Promise(function (resolve) {
+                    var started = Date.now();
+                    (function poll() {
+                        if (
+                            typeof google !== 'undefined' &&
+                            google.accounts &&
+                            google.accounts.id &&
+                            google.accounts.oauth2
+                        ) {
+                            resolve(true);
                             return;
                         }
-                    }
-                    localStorage.removeItem(CONFIG.SESSION_KEY);
-                } catch (e) {
-                    localStorage.removeItem(CONFIG.SESSION_KEY);
-                }
+
+                        if ((Date.now() - started) >= maxWaitMs) {
+                            resolve(false);
+                            return;
+                        }
+                        setTimeout(poll, 100);
+                    })();
+                });
             }
 
-            // Show login view
-            showLoginView();
-        };
+            async function fetchJsonWithTimeout_(url, options) {
+                var controller = new AbortController();
+                var timeout = setTimeout(function () {
+                    controller.abort();
+                }, CONFIG.NETWORK_TIMEOUT_MS);
 
-        // =============================================
-        // 🚪 LOGOUT
-        // =============================================
-        function logout() {
-            localStorage.removeItem(CONFIG.SESSION_KEY);
-            if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.disableAutoSelect();
-            }
-            showLoginView();
-        }
-        // =============================================
-        // 📧 POSTMESSAGE BRIDGE: Share session with iframe
-        // Secure cross-origin communication for auto email/agent
-        // =============================================
-        window.addEventListener('message', function (event) {
-            // Security: Only respond to requests from Apps Script domains
-            var trustedOrigins = [];
-            try {
-                var scriptOrigin = new URL(CONFIG.WEBAPP_URL).origin;
-                trustedOrigins.push(scriptOrigin);
-            } catch (_) { }
-            trustedOrigins.push('https://script.google.com', 'https://script.googleusercontent.com');
-            var isAllowed = trustedOrigins.indexOf(event.origin) !== -1;
-
-            if (!isAllowed) {
-                console.log('⚠️ postMessage from untrusted origin:', event.origin);
-                return;
-            }
-
-            // Handle email request from iframe
-            if (event.data && event.data.type === 'REQUEST_USER_SESSION') {
-                console.log('📧 Iframe requested user session');
-
-                var session = localStorage.getItem(CONFIG.SESSION_KEY);
-                var responseData = { type: 'USER_SESSION_RESPONSE', success: false };
-
-                if (session) {
+                try {
+                    var requestOptions = Object.assign({}, options || {}, {
+                        signal: controller.signal,
+                        cache: 'no-store'
+                    });
+                    var response = await fetch(url, requestOptions);
+                    var payload = {};
                     try {
-                        var data = JSON.parse(session);
-                        responseData = {
-                            type: 'USER_SESSION_RESPONSE',
-                            success: true,
-                            email: data.email || '',
-                            name: data.name || '',
-                            picture: data.picture || ''
-                        };
-                        console.log('✅ Sending session to iframe:', data.email);
-                    } catch (e) {
-                        console.error('❌ Failed to parse session:', e);
+                        payload = await response.json();
+                    } catch (_) {
+                        payload = {};
                     }
-                }
 
-                // Send response back to the iframe
-                var frame = document.getElementById('dashboard-frame');
-                if (frame && frame.contentWindow) {
-                    frame.contentWindow.postMessage(responseData, event.origin);
+                    if (!response.ok) {
+                        var reason = safeText_(payload.error_description || payload.error || response.statusText, 180);
+                        throw new Error(reason || 'Request failed.');
+                    }
+                    return payload;
+                } finally {
+                    clearTimeout(timeout);
                 }
             }
-        });
+
+            async function verifyIdToken_(idToken, expectedEmail) {
+                var tokenInfo = await fetchJsonWithTimeout_(
+                    'https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken)
+                );
+
+                var aud = String(tokenInfo.aud || '');
+                if (aud !== CONFIG.CLIENT_ID) {
+                    throw new Error('Invalid Google audience.');
+                }
+
+                var verifiedEmail = normalizeEmail_(tokenInfo.email || expectedEmail);
+                if (!verifiedEmail) {
+                    throw new Error('Email missing in Google token.');
+                }
+                if (expectedEmail && verifiedEmail !== normalizeEmail_(expectedEmail)) {
+                    throw new Error('Google token email mismatch.');
+                }
+                if (String(tokenInfo.email_verified).toLowerCase() !== 'true') {
+                    throw new Error('Google account email is not verified.');
+                }
+                if (!isAllowedEmail_(verifiedEmail)) {
+                    throw new Error('Access denied for this account.');
+                }
+
+                var exp = Number(tokenInfo.exp || 0);
+                if (!Number.isFinite(exp) || exp <= (nowSec_() + CONFIG.TOKEN_SKEW_SECONDS)) {
+                    throw new Error('Google token is expired.');
+                }
+
+                return {
+                    email: verifiedEmail,
+                    exp: exp,
+                    name: safeText_(tokenInfo.name || '', 120),
+                    picture: ''
+                };
+            }
+
+            async function verifyAccessToken_(accessToken, expectedEmail) {
+                var tokenInfo = await fetchJsonWithTimeout_(
+                    'https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(accessToken)
+                );
+
+                var aud = String(tokenInfo.aud || tokenInfo.azp || '');
+                if (aud !== CONFIG.CLIENT_ID) {
+                    throw new Error('Invalid OAuth client audience.');
+                }
+
+                var expiresIn = Number(tokenInfo.expires_in || 0);
+                if (!Number.isFinite(expiresIn) || expiresIn <= CONFIG.TOKEN_SKEW_SECONDS) {
+                    throw new Error('Access token is expired.');
+                }
+
+                var userInfo = await fetchJsonWithTimeout_('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: 'Bearer ' + accessToken }
+                });
+
+                var verifiedEmail = normalizeEmail_(userInfo.email || expectedEmail);
+                if (!verifiedEmail) {
+                    throw new Error('Unable to fetch account email.');
+                }
+                if (expectedEmail && verifiedEmail !== normalizeEmail_(expectedEmail)) {
+                    throw new Error('Google account mismatch.');
+                }
+                if (String(userInfo.email_verified).toLowerCase() === 'false') {
+                    throw new Error('Google account email is not verified.');
+                }
+                if (!isAllowedEmail_(verifiedEmail)) {
+                    throw new Error('Access denied for this account.');
+                }
+
+                return {
+                    email: verifiedEmail,
+                    exp: nowSec_() + Math.min(expiresIn, CONFIG.SESSION_MAX_AGE_SECONDS),
+                    name: safeText_(userInfo.name || '', 120),
+                    picture: safeImageUrl_(userInfo.picture || '')
+                };
+            }
+
+            async function validateAndShowDashboard_(payload, token, provider) {
+                var email = normalizeEmail_(payload && payload.email);
+                if (!email) {
+                    throw new Error('Google response did not include an email.');
+                }
+                if (!isAllowedEmail_(email)) {
+                    throw new Error('Access denied. "' + email + '" is not authorized.');
+                }
+
+                showStatus('loading', 'Verifying Google session...');
+
+                var verified;
+                if (provider === 'id_token') {
+                    verified = await verifyIdToken_(token, email);
+                } else if (provider === 'access_token') {
+                    verified = await verifyAccessToken_(token, email);
+                } else {
+                    throw new Error('Unsupported authentication provider.');
+                }
+
+                var session = buildSession_({
+                    email: verified.email,
+                    name: payload.name || verified.name || verified.email,
+                    picture: payload.picture || verified.picture || '',
+                    exp: verified.exp,
+                    provider: provider,
+                    token: token
+                });
+
+                writeStoredSession_(session);
+                showStatus('success', 'Welcome, ' + safeText_(session.name, 80) + '. Loading dashboard...');
+
+                setTimeout(function () {
+                    clearStatus();
+                    showDashboardView(session);
+                }, 400);
+            }
+
+            async function initializeGoogleSignIn() {
+                if (STATE.googleSDKLoaded) return true;
+
+                var sdkReady = await waitForGoogleSDK_(7000);
+                if (!sdkReady) {
+                    return false;
+                }
+
+                google.accounts.id.initialize({
+                    client_id: CONFIG.CLIENT_ID,
+                    callback: handleCredentialResponse_,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+
+                try {
+                    google.accounts.id.renderButton(
+                        document.getElementById('google-signin-container'),
+                        {
+                            type: 'standard',
+                            theme: 'outline',
+                            size: 'large',
+                            text: 'signin_with',
+                            shape: 'rectangular',
+                            logo_alignment: 'left',
+                            width: 300
+                        }
+                    );
+                    document.getElementById('custom-google-btn').style.display = 'none';
+                } catch (_) {
+                    // Keep fallback button visible.
+                }
+
+                STATE.tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CONFIG.CLIENT_ID,
+                    scope: 'email profile',
+                    callback: handleTokenResponse_
+                });
+
+                STATE.googleSDKLoaded = true;
+                return true;
+            }
+
+            async function initiateGoogleSignIn() {
+                setSignInBusy_(true);
+                showStatus('loading', 'Opening Google Sign-In...');
+
+                var ready = STATE.googleSDKLoaded ? true : await initializeGoogleSignIn();
+                if (!ready) {
+                    showStatus('error', 'Google Sign-In failed to initialize. Please refresh and try again.');
+                    setSignInBusy_(false);
+                    return;
+                }
+
+                google.accounts.id.prompt(function (notification) {
+                    if (
+                        notification &&
+                        (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment())
+                    ) {
+                        if (STATE.tokenClient) {
+                            STATE.tokenClient.requestAccessToken({ prompt: 'consent' });
+                            return;
+                        }
+                        showStatus('error', 'Google Sign-In popup could not be opened.');
+                    }
+                    setSignInBusy_(false);
+                });
+            }
+
+            async function handleCredentialResponse_(response) {
+                try {
+                    showStatus('loading', 'Verifying credentials...');
+                    if (!response || !response.credential) {
+                        throw new Error('Missing Google credential.');
+                    }
+                    var payload = decodeJwtPayload(response.credential);
+                    await validateAndShowDashboard_(payload, response.credential, 'id_token');
+                } catch (error) {
+                    clearStoredSession_();
+                    showStatus('error', error && error.message ? error.message : 'Authentication failed. Please try again.');
+                } finally {
+                    setSignInBusy_(false);
+                }
+            }
+
+            async function handleTokenResponse_(response) {
+                try {
+                    if (!response || response.error) {
+                        showStatus('error', 'Sign-in was cancelled.');
+                        return;
+                    }
+                    showStatus('loading', 'Fetching account details...');
+                    var userInfo = await fetchJsonWithTimeout_('https://www.googleapis.com/oauth2/v3/userinfo', {
+                        headers: { Authorization: 'Bearer ' + response.access_token }
+                    });
+                    await validateAndShowDashboard_(
+                        {
+                            email: userInfo.email,
+                            name: userInfo.name,
+                            picture: userInfo.picture
+                        },
+                        response.access_token,
+                        'access_token'
+                    );
+                } catch (error) {
+                    clearStoredSession_();
+                    showStatus('error', error && error.message ? error.message : 'Unable to verify Google account.');
+                } finally {
+                    setSignInBusy_(false);
+                }
+            }
+
+            async function restoreValidatedSession_() {
+                var session = readStoredSession_();
+                if (!isSessionShapeValid_(session)) {
+                    clearStoredSession_();
+                    return false;
+                }
+                if (!isSessionFresh_(session)) {
+                    clearStoredSession_();
+                    return false;
+                }
+                if (!isAllowedEmail_(session.email)) {
+                    clearStoredSession_();
+                    return false;
+                }
+
+                showStatus('loading', 'Restoring your verified session...');
+
+                try {
+                    var verified;
+                    if (session.provider === 'id_token') {
+                        verified = await verifyIdToken_(session.token, session.email);
+                    } else if (session.provider === 'access_token') {
+                        verified = await verifyAccessToken_(session.token, session.email);
+                    } else {
+                        throw new Error('Unsupported stored session type.');
+                    }
+
+                    var restored = buildSession_({
+                        email: verified.email,
+                        name: session.name || verified.name || verified.email,
+                        picture: session.picture || verified.picture || '',
+                        exp: verified.exp,
+                        provider: session.provider,
+                        token: session.token
+                    });
+
+                    writeStoredSession_(restored);
+                    clearStatus();
+                    showDashboardView(restored);
+                    return true;
+                } catch (_) {
+                    clearStoredSession_();
+                    return false;
+                }
+            }
+
+            function logout() {
+                var existing = readStoredSession_();
+                clearStoredSession_();
+
+                if (
+                    existing &&
+                    existing.provider === 'access_token' &&
+                    existing.token &&
+                    typeof google !== 'undefined' &&
+                    google.accounts &&
+                    google.accounts.oauth2 &&
+                    typeof google.accounts.oauth2.revoke === 'function'
+                ) {
+                    try {
+                        google.accounts.oauth2.revoke(existing.token, function () { });
+                    } catch (_) { }
+                }
+
+                if (
+                    typeof google !== 'undefined' &&
+                    google.accounts &&
+                    google.accounts.id &&
+                    typeof google.accounts.id.disableAutoSelect === 'function'
+                ) {
+                    google.accounts.id.disableAutoSelect();
+                }
+
+                showLoginView();
+                showStatus('success', 'Signed out successfully.');
+            }
+
+            window.addEventListener('message', function (event) {
+                if (!TRUSTED_ORIGINS.has(String(event.origin || ''))) {
+                    return;
+                }
+
+                var frame = document.getElementById('dashboard-frame');
+                if (!frame || !frame.contentWindow) {
+                    return;
+                }
+
+                if (event.source !== frame.contentWindow) {
+                    return;
+                }
+
+                var message = event.data;
+                if (!message || typeof message !== 'object' || message.type !== 'REQUEST_USER_SESSION') {
+                    return;
+                }
+
+                var requestId = safeText_(message.requestId || '', 80);
+                var session = readStoredSession_();
+                var responseData = {
+                    type: 'USER_SESSION_RESPONSE',
+                    requestId: requestId,
+                    success: false
+                };
+
+                if (
+                    isSessionShapeValid_(session) &&
+                    isSessionFresh_(session) &&
+                    isAllowedEmail_(session.email)
+                ) {
+                    responseData.success = true;
+                    responseData.email = session.email;
+                    responseData.name = session.name || '';
+                    responseData.picture = session.picture || '';
+                    responseData.exp = Number(session.exp || 0);
+                } else if (session) {
+                    clearStoredSession_();
+                }
+
+                frame.contentWindow.postMessage(responseData, event.origin);
+            });
+
+            window.initiateGoogleSignIn = initiateGoogleSignIn;
+            window.logout = logout;
+
+            window.addEventListener('load', function () {
+                (async function bootstrap() {
+                    showLoginView();
+                    showStatus('loading', 'Initializing Google Sign-In...');
+
+                    var initialized = await initializeGoogleSignIn();
+                    if (!initialized) {
+                        showStatus('error', 'Google Sign-In is unavailable. Please refresh and try again.');
+                        return;
+                    }
+
+                    var restored = await restoreValidatedSession_();
+                    if (!restored) {
+                        clearStatus();
+                    }
+                })().catch(function (error) {
+                    clearStoredSession_();
+                    showLoginView();
+                    showStatus('error', error && error.message ? error.message : 'Unable to initialize app.');
+                });
+            });
+        })();
     </script>
 </body>
 
