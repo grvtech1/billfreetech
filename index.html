@@ -556,7 +556,23 @@
                     ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff');
 
                 var frame = document.getElementById('dashboard-frame');
-                frame.src = CONFIG.WEBAPP_URL;
+
+                // Pass JWT token to GAS Web App via URL parameter for secure backend validation
+                var tokenParam = userData.token ? '?token=' + encodeURIComponent(userData.token) : '';
+                frame.src = CONFIG.WEBAPP_URL + tokenParam;
+
+                // Listen for requests from the nested GAS iframe to construct session
+                window.addEventListener('message', function (event) {
+                    if (event.data && event.data.type === 'REQUEST_USER_SESSION') {
+                        event.source.postMessage({
+                            type: 'USER_SESSION_RESPONSE',
+                            success: true,
+                            email: userData.email,
+                            name: userData.name,
+                            token: userData.token
+                        }, '*');
+                    }
+                });
             }
 
             function clearStatus() {
