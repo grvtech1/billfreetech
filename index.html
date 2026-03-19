@@ -557,13 +557,17 @@
 
                 var frame = document.getElementById('dashboard-frame');
 
-                // Pass token + provider to GAS via URL params for server-side identity
+                // Pass verified user identity to GAS Web App via URL params.
+                // Email is included directly (validated server-side against agent whitelist by doGet).
                 var params = [];
+                if (userData.email) params.push('cfEmail=' + encodeURIComponent(userData.email));
+                if (userData.name) params.push('cfName=' + encodeURIComponent(userData.name));
                 if (userData.token) params.push('token=' + encodeURIComponent(userData.token));
                 if (userData.provider) params.push('provider=' + encodeURIComponent(userData.provider));
                 var queryString = params.length > 0 ? '?' + params.join('&') : '';
                 frame.src = CONFIG.WEBAPP_URL + queryString;
             }
+
 
             function clearStatus() {
                 var statusEl = document.getElementById('status-message');
