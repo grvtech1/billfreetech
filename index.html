@@ -485,10 +485,11 @@
                     'veer.billfree@gmail.com',
                     'gaurav.pal@billfree.in'
                 ]),
-                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbx71ges66w1x5NLRMchxTaqdAN2FRstEVWeFgcR-oMkJs7_guUwl-RVJxBooIqAssytVQ/exec',
+                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbyYuxzrDE9g7W4np-kb4jedh-gdsk1-8UyBHb4OI5ef20dURDnk-o4kd7BqeXxl20Do1g/exec',
                 TRUSTED_GAS_ORIGINS: Object.freeze([
                     'https://script.google.com',
-                    'https://script.googleusercontent.com'
+                    'https://script.googleusercontent.com',
+                    'https://script.google.com/macros/s/AKfycbyF01ydrebAMHq6xXdQMcSsBIRr6h5AUg7Q_cazeC1ba8DJFTwaabA8XVK6T-GInNQLqQ/exec'
                 ]),
                 SESSION_KEY: 'billfree_auth_session_v2',
                 LEGACY_SESSION_KEY: 'billfree_auth_session',
@@ -560,29 +561,6 @@
                     ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff');
 
                 var frame = document.getElementById('dashboard-frame');
-                
-                // 📡 IDENTITY PUSH: Send identity as soon as iframe loads
-                // Using addEventListener to avoid overwriting other potential listeners
-                frame.addEventListener('load', function() {
-                    console.log('🌉 Iframe loaded — pushing session data...');
-                    var responseData = {
-                        type: 'USER_SESSION_RESPONSE',
-                        requestId: 'push-' + Date.now(),
-                        success: true,
-                        email: userData.email,
-                        name: userData.name || '',
-                        picture: userData.picture || '',
-                        exp: Number(userData.exp || 0)
-                    };
-                    // Use '*' because GAS iframe origin is dynamic googleusercontent.com
-                    try {
-                        frame.contentWindow.postMessage(responseData, '*');
-                        console.log('✅ Identity successfully pushed to GAS iframe');
-                    } catch (e) {
-                        console.error('❌ Failed to push identity:', e);
-                    }
-                });
-
                 frame.src = CONFIG.WEBAPP_URL;
             }
 
@@ -1097,55 +1075,45 @@
             }
 
             window.addEventListener('message', function (event) {
-                // 🛡️ SECURITY: Validate origin
-                var origin = String(event.origin || '');
-                var isTrusted = TRUSTED_ORIGINS.has(origin) ||
-                    origin.endsWith('.googleusercontent.com') ||
-                    origin === 'null';
+                // origin check
+                const origin = String(event.origin || '');
+                const isTrusted = TRUSTED_ORIGINS.has(origin) || 
+                                 origin.endsWith('.google.com') || 
+                                 origin.endsWith('.googleusercontent.com');
 
                 if (!isTrusted) {
-                    console.warn('⚠️ Bridge: Received message from untrusted origin:', origin);
+                    console.warn('🌉 Untrusted origin message blocked:', origin);
                     return;
                 }
 
                 var frame = document.getElementById('dashboard-frame');
-                if (!frame || !frame.contentWindow) {
-                    console.warn('⚠️ Bridge: Dashboard frame not found or not ready.');
-                    return;
-                }
-
-                if (event.source !== frame.contentWindow) {
-                    return;
-                }
+                if (!frame || !frame.contentWindow) return;
+                if (event.source !== frame.contentWindow) return;
 
                 var message = event.data;
-                var isHandshake = message && typeof message === 'object' && 
-                    (message.type === 'REQUEST_USER_SESSION' || message.type === 'HANDSHAKE_READY');
+                if (!message || typeof message !== 'object' || message.type !== 'REQUEST_USER_SESSION') return;
 
-                if (!isHandshake) {
-                    return;
-                }
-
-                var requestId = safeText_(message.requestId || '', 80);
                 var session = readStoredSession_();
                 var responseData = {
                     type: 'USER_SESSION_RESPONSE',
-                    requestId: requestId,
+                    requestId: message.requestId || '0',
                     success: false
                 };
 
-                if (
-                    isSessionShapeValid_(session) &&
-                    isSessionFresh_(session) &&
-                    isAllowedEmail_(session.email)
-                ) {
-                    responseData.success = true;
-                    responseData.email = session.email;
-                    responseData.name = session.name || '';
-                    responseData.picture = session.picture || '';
-                    responseData.exp = Number(session.exp || 0);
-                } else if (session) {
-                    clearStoredSession_();
+                if (isSessionShapeValid_(session) && isSessionFresh_(session)) {
+                    responseData = {
+                        type: 'USER_SESSION_RESPONSE',
+                        requestId: message.requestId || '0',
+                        success: true,
+                        email: session.email,
+                        name: session.name || '',
+                        picture: session.picture || '',
+                        exp: Number(session.exp || 0)
+                    };
+                    console.log('🌉 Session bridge ACTIVE — propagating identity:', session.email);
+                } else {
+                    console.warn('🌉 Session bridge FAILED — session invalid or expired');
+                    if (session) clearStoredSession_();
                 }
 
                 frame.contentWindow.postMessage(responseData, event.origin);
