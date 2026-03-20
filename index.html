@@ -485,7 +485,7 @@
                     'veer.billfree@gmail.com',
                     'gaurav.pal@billfree.in'
                 ]),
-                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbzarCQpEhs9-2u-tr5RfzZD58EKU1HQI2i_qQvJd9CEYV_TA7g4uxBos8_1s1qcPA1-xQ/exec',
+                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbx71ges66w1x5NLRMchxTaqdAN2FRstEVWeFgcR-oMkJs7_guUwl-RVJxBooIqAssytVQ/exec',
                 TRUSTED_GAS_ORIGINS: Object.freeze([
                     'https://script.google.com',
                     'https://script.googleusercontent.com'
@@ -1101,14 +1101,16 @@
                 var origin = String(event.origin || '');
                 var isTrusted = TRUSTED_ORIGINS.has(origin) ||
                     origin.endsWith('.googleusercontent.com') ||
-                    origin === 'null'; // 'null' can happen in some sandboxed environments
+                    origin === 'null';
 
                 if (!isTrusted) {
+                    console.warn('⚠️ Bridge: Received message from untrusted origin:', origin);
                     return;
                 }
 
                 var frame = document.getElementById('dashboard-frame');
                 if (!frame || !frame.contentWindow) {
+                    console.warn('⚠️ Bridge: Dashboard frame not found or not ready.');
                     return;
                 }
 
@@ -1117,7 +1119,10 @@
                 }
 
                 var message = event.data;
-                if (!message || typeof message !== 'object' || message.type !== 'REQUEST_USER_SESSION') {
+                var isHandshake = message && typeof message === 'object' && 
+                    (message.type === 'REQUEST_USER_SESSION' || message.type === 'HANDSHAKE_READY');
+
+                if (!isHandshake) {
                     return;
                 }
 
