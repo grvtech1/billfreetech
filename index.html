@@ -486,6 +486,10 @@
                     'gaurav.pal@billfree.in'
                 ]),
                 WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbwycXZ9Ocsu3aoe3wKMu4DCTJra-rPvvS241caKPWTQWVb9B7yO966HyCMWbX253cHYMg/exec',
+                TRUSTED_GAS_ORIGINS: Object.freeze([
+                    'https://script.google.com',
+                    'https://script.googleusercontent.com'
+                ]),
                 SESSION_KEY: 'billfree_auth_session_v2',
                 LEGACY_SESSION_KEY: 'billfree_auth_session',
                 SESSION_MAX_AGE_SECONDS: 3600,
@@ -556,18 +560,8 @@
                     ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff');
 
                 var frame = document.getElementById('dashboard-frame');
-
-                // Pass verified user identity to GAS Web App via URL params.
-                // Email is included directly (validated server-side against agent whitelist by doGet).
-                var params = [];
-                if (userData.email) params.push('cfEmail=' + encodeURIComponent(userData.email));
-                if (userData.name) params.push('cfName=' + encodeURIComponent(userData.name));
-                if (userData.token) params.push('token=' + encodeURIComponent(userData.token));
-                if (userData.provider) params.push('provider=' + encodeURIComponent(userData.provider));
-                var queryString = params.length > 0 ? '?' + params.join('&') : '';
-                frame.src = CONFIG.WEBAPP_URL + queryString;
+                frame.src = CONFIG.WEBAPP_URL;
             }
-
 
             function clearStatus() {
                 var statusEl = document.getElementById('status-message');
@@ -610,12 +604,10 @@
             }
 
             function buildTrustedOrigins_() {
-                var origins = new Set([
-                    'https://script.google.com',
-                    'https://script.googleusercontent.com'
-                ]);
+                var origins = new Set(CONFIG.TRUSTED_GAS_ORIGINS);
                 try {
-                    origins.add(new URL(CONFIG.WEBAPP_URL).origin);
+                    var url = new URL(CONFIG.WEBAPP_URL);
+                    origins.add(url.origin);
                 } catch (_) { }
                 return origins;
             }
@@ -1118,9 +1110,6 @@
                     responseData.name = session.name || '';
                     responseData.picture = session.picture || '';
                     responseData.exp = Number(session.exp || 0);
-                    // Include token + provider so GAS iframe can verify identity on backend
-                    responseData.token = session.token || '';
-                    responseData.provider = session.provider || '';
                 } else if (session) {
                     clearStoredSession_();
                 }
