@@ -485,7 +485,7 @@
                     'veer.billfree@gmail.com',
                     'gaurav.pal@billfree.in'
                 ]),
-                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbykljNX7Yo-0cJofU1G1X7IwguqJ84XL8UeqIpbBgx8CobkcI6DNGEuVNF4p4eRX4eIjA/exec',
+                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbxfpwB1avElpPLSFfM05PELg-BHbUIVFCFNf6XGSiVV0IZGJfd-pH4jdE3nFjrKs8k-rw/exec',
                 TRUSTED_GAS_ORIGINS: Object.freeze([
                     'https://script.google.com',
                     'https://script.googleusercontent.com'
@@ -1074,7 +1074,13 @@
             }
 
             window.addEventListener('message', function (event) {
-                if (!TRUSTED_ORIGINS.has(String(event.origin || ''))) {
+                // 🛡️ SECURITY: Validate origin
+                var origin = String(event.origin || '');
+                var isTrusted = TRUSTED_ORIGINS.has(origin) ||
+                    origin.endsWith('.googleusercontent.com') ||
+                    origin === 'null'; // 'null' can happen in some sandboxed environments
+
+                if (!isTrusted) {
                     return;
                 }
 
