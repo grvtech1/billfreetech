@@ -485,7 +485,7 @@
                     'veer.billfree@gmail.com',
                     'gaurav.pal@billfree.in'
                 ]),
-                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbyYuxzrDE9g7W4np-kb4jedh-gdsk1-8UyBHb4OI5ef20dURDnk-o4kd7BqeXxl20Do1g/exec',
+                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbxIBlb26hOZy37IZQ2YPglWbrhAP3BoFu29P_lbDeed7oohBUitbH3A_9bqXkFTBNr3gg/exec',
                 TRUSTED_GAS_ORIGINS: Object.freeze([
                     'https://script.google.com',
                     'https://script.googleusercontent.com',
@@ -561,6 +561,42 @@
                     ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') + '&background=667eea&color=fff');
 
                 var frame = document.getElementById('dashboard-frame');
+                
+                // Add a listener to send the token once the iframe is ready
+                var messageSent = false;
+                var sendIdentity = function() {
+                    if (messageSent) return;
+                    try {
+                        frame.contentWindow.postMessage({
+                            type: 'BT_AUTH_SYNC',
+                            payload: {
+                                email: userData.email,
+                                name: userData.name,
+                                picture: userData.picture,
+                                token: userData.token, // Google ID Token
+                                provider: userData.provider
+                            }
+                        }, '*'); // In production, replace '*' with CONFIG.WEBAPP_URL origin for better security
+                        messageSent = true;
+                        console.log('Auth sync message sent to iframe');
+                    } catch (err) {
+                        console.error('Failed to send auth sync message:', err);
+                    }
+                };
+
+                // Listen for a 'ready' signal from the GAS app
+                window.addEventListener('message', function(event) {
+                    if (event.data && event.data.type === 'BT_APP_READY') {
+                        console.log('Received BT_APP_READY from iframe');
+                        sendIdentity();
+                    }
+                }, { once: false });
+
+                // Also send on load as a fallback
+                frame.onload = function() {
+                    setTimeout(sendIdentity, 1000); // Small delay to ensure listener is active
+                };
+
                 frame.src = CONFIG.WEBAPP_URL;
             }
 
