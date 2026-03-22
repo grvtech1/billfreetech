@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4F46E5">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' https://accounts.google.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; frame-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests">
+        content="default-src 'self'; script-src 'self' https://accounts.google.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; frame-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests">
     <link rel="icon" type="image/png" href="favicon.png">
     <title>BillFree TechSupport - Dashboard</title>
 
@@ -467,7 +467,8 @@
             </div>
         </header>
         <iframe id="dashboard-frame" class="dashboard-frame" src="about:blank" title="BillFree TechSupport Dashboard"
-            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            referrerpolicy="strict-origin-when-cross-origin"
+            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals allow-downloads"></iframe>
     </div>
 
     <!-- Google Identity Services SDK -->
@@ -597,7 +598,7 @@
                     setTimeout(sendIdentity, 1000); // Small delay to ensure listener is active
                 };
 
-                frame.src = CONFIG.WEBAPP_URL;
+                frame.src = CONFIG.WEBAPP_URL + (CONFIG.WEBAPP_URL.indexOf('?') === -1 ? '?' : '&') + 'authuser=0';
             }
 
             function clearStatus() {
