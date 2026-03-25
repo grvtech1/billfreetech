@@ -486,11 +486,11 @@
                     'veer.billfree@gmail.com',
                     'gaurav.pal@billfree.in'
                 ]),
-                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbwSLuzT3dtLmrGooJrhEnUcMxQw0WQSzUtXeCpBmbidULgHp9Ce9yPEjnYoDmAe-QILvg/exec',
+                WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbxVY-_-8Rwl5njibKwV4LbpJNizTyHo4NCKBHtrE1mOsvsWHkouUZKmEn_yBrJg70EdaQ/exec',
                 TRUSTED_GAS_ORIGINS: Object.freeze([
                     'https://script.google.com',
                     'https://script.googleusercontent.com',
-                    'https://script.google.com/macros/s/AKfycbwSLuzT3dtLmrGooJrhEnUcMxQw0WQSzUtXeCpBmbidULgHp9Ce9yPEjnYoDmAe-QILvg/exec'
+                    'https://script.google.com/macros/s/AKfycbxVY-_-8Rwl5njibKwV4LbpJNizTyHo4NCKBHtrE1mOsvsWHkouUZKmEn_yBrJg70EdaQ/exec'
                 ]),
                 SESSION_KEY: 'billfree_auth_session_v2',
                 LEGACY_SESSION_KEY: 'billfree_auth_session',
@@ -613,9 +613,13 @@
                 };
 
                 // 🌉 URL PARAMETER BRIDGE (CRITICAL FIX)
-                // Pass identity via URL to bypass postMessage blocking in GAS host.
+                // Pass identity via URL params — postMessage is blocked by COOP.
+                // doGet reads e.parameter.eml/nm → injects as injectedUserEmail/injectedUserName
+                // → SERVER_FALLBACK sets APP_USER → form autofills dynamically.
                 var separator = CONFIG.WEBAPP_URL.indexOf('?') === -1 ? '?' : '&';
-                var params = 'authuser=0';
+                var params = 'authuser=0'
+                    + '&eml=' + encodeURIComponent(normalizeEmail_(userData.email))
+                    + '&nm=' + encodeURIComponent(safeText_(userData.name || '', 80));
 
                 frame.src = CONFIG.WEBAPP_URL + separator + params;
             }
