@@ -15,22 +15,31 @@ Secure login portal for BillFree TechSupport Operations Dashboard.
 
 Edit `index.html` to customize:
 
+> Configuration lives in **`app.js`** (the `CONFIG` object near the top). The page
+> script was externalized from `index.html` so the Content-Security-Policy no longer
+> needs `script-src 'unsafe-inline'`.
+
 ### Allowed Users
-Update the `ALLOWED_EMAILS` array (around line 290):
+Update the `ALLOWED_EMAILS` array in `app.js`:
 ```javascript
 ALLOWED_EMAILS: [
-    'manjeetkashyap.billfree@gmail.com',
+    'neerajkumar.billfree@gmail.com',
     'suraj.billfree2@gmail.com',
     'veer.billfree@gmail.com',
-    'your-email@domain.com'  // Add more
+    'gaurav.pal@billfree.in'  // Add more
 ]
 ```
 
 ### Apps Script Webapp URL
-Update `WEBAPP_URL` (around line 300):
+Update `WEBAPP_URL` in `app.js`:
 ```javascript
 WEBAPP_URL: 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'
 ```
+
+### Debug logging
+
+`CONFIG.DEBUG` is `false` in production (no console output). Set it to `true` locally
+to see auth-sync / session-bridge diagnostics.
 
 ## Security Features
 
