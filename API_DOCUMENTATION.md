@@ -1,22 +1,23 @@
 # BillFree — Ticket Creation API (WhatsApp / Chatbot)
 
-**Version:** v1.1 | **Updated:** 2026-07-06 | **Contact:** gaurav.pal@billfree.in
+**Version:** v1.2 | **Updated:** 2026-07-07 | **Contact:** gaurav.pal@billfree.in
 
 A single synchronous endpoint to create a support ticket. Designed for WhatsApp AI
 chatbots and other automated integrations. The ticket is created and an agent is
-auto-assigned in the same request; the result is returned in the response body.
-**No webhooks, no polling.**
+auto-assigned in the same request; the final result is returned **directly in the
+response body with HTTP 200 — no redirects to follow, no webhooks, no polling.**
 
 ---
 
 ## Endpoint
 
 ```
-POST https://script.google.com/macros/s/AKfycbxWiztHE-FDLLxheZLC8dgv9e095GqB5sYkluREN7sPrbl88BZZLaQWVsVk58VCRqTG/exec
+POST https://billfreetech.pages.dev/api/create-ticket
 ```
 
 - **Content-Type:** `application/json`
-- **Redirects:** Google Apps Script issues one 302 redirect. Your client **must follow redirects** (`-L` in cURL, `allow_redirects=True` in Python, `redirect: "follow"` in fetch). The final response body is JSON.
+- **Response:** the final JSON, returned directly with `HTTP 200`. **No 3xx redirect** —
+  you do not need `follow redirects` / `-L` / `allow_redirects` on your side.
 
 ---
 
@@ -72,7 +73,7 @@ tied to a name and a per-key rate limit. Treat the key as a secret.
 {
   "success": true,
   "data": {
-    "ticketId": "BF-TKT-2026-07-2526",
+    "ticketId": "BF-TKT-2026-07-5441",
     "assignedAgent": "Agent Name",
     "status": "Not Completed",
     "requestId": "req_abc123def45"
@@ -100,6 +101,9 @@ tied to a name and a per-key rate limit. Treat the key as a secret.
 | `E006` | Server busy (lock contention) | Retry after ~5s |
 | `E999` | Internal error | Contact BillFree with the `requestId` |
 
+> **Detecting success:** always branch on the JSON `success` field (and `code`), not on the
+> HTTP status. Business-level errors are returned with the details above so you can react precisely.
+
 ---
 
 ## Duplicate handling (idempotency)
@@ -115,7 +119,7 @@ the user instead of showing a failure:
   "error": "Duplicate request. A ticket with this phone and concern was created in the last 5 minutes.",
   "code": "E001",
   "requestId": "req_...",
-  "data": { "existingTicketId": "BF-TKT-2026-07-2526" }
+  "data": { "existingTicketId": "BF-TKT-2026-07-5441" }
 }
 ```
 
@@ -157,26 +161,26 @@ present, treat it as success and reply with that ticket id.
 ## Examples
 
 ### cURL
+
 ```bash
-curl -L -X POST \
-  "https://script.google.com/macros/s/AKfycbxWiztHE-FDLLxheZLC8dgv9e095GqB5sYkluREN7sPrbl88BZZLaQWVsVk58VCRqTG/exec" \
+curl -X POST "https://billfreetech.pages.dev/api/create-ticket" \
   -H "Content-Type: application/json" \
   -d '{"action":"createTicket","apiKey":"bf_wa_live_xxxxxxxx","concern":"POS not working","phone":"9876543210"}'
 ```
 
 ### Python
+
 ```python
 import requests
 
 resp = requests.post(
-    "https://script.google.com/macros/s/AKfycbxWiztHE-FDLLxheZLC8dgv9e095GqB5sYkluREN7sPrbl88BZZLaQWVsVk58VCRqTG/exec",
+    "https://billfreetech.pages.dev/api/create-ticket",
     json={
         "action": "createTicket",
         "apiKey": "bf_wa_live_xxxxxxxx",
         "concern": "POS not working",
-        "phone": "9876543210"
+        "phone": "9876543210",
     },
-    allow_redirects=True,
     timeout=20,
 )
 data = resp.json()
@@ -189,21 +193,18 @@ else:
 ```
 
 ### JavaScript (Node.js)
+
 ```javascript
-const resp = await fetch(
-  "https://script.google.com/macros/s/AKfycbxWiztHE-FDLLxheZLC8dgv9e095GqB5sYkluREN7sPrbl88BZZLaQWVsVk58VCRqTG/exec",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "createTicket",
-      apiKey: "bf_wa_live_xxxxxxxx",
-      concern: "POS not working",
-      phone: "9876543210"
-    }),
-    redirect: "follow"
-  }
-);
+const resp = await fetch("https://billfreetech.pages.dev/api/create-ticket", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    action: "createTicket",
+    apiKey: "bf_wa_live_xxxxxxxx",
+    concern: "POS not working",
+    phone: "9876543210",
+  }),
+});
 const data = await resp.json();
 if (data.success) {
   console.log("Ticket:", data.data.ticketId);
