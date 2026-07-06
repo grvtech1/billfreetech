@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; frame-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>BillFree TechSupport - Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- 🚀 Performance: Font Awesome with preload -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </noscript>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #4338CA;
+            --accent: #667eea;
+            --success: #10B981;
+            --danger: #EF4444;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        body.dashboard-mode {
+            padding: 0;
+            background: #f5f7fa;
+        }
+
+        /* ===== LOGIN VIEW ===== */
+        #login-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before,
+        .bg-animation::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-animation::before {
+            background: white;
+            top: -100px;
+            right: -100px;
+        }
+
+        .bg-animation::after {
+            background: white;
+            bottom: -150px;
+            left: -150px;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-30px) rotate(10deg);
+            }
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 40px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-gradient);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo-icon i {
+            font-size: 36px;
+            color: white;
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1E293B;
+            margin-bottom: 8px;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #E2E8F0, transparent);
+            margin: 32px 0;
+        }
+
+        .welcome-text {
+            font-size: 16px;
+            color: #475569;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .google-signin-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: white;
+            color: #1E293B;
+            border: 2px solid #E2E8F0;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .google-signin-btn:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .google-signin-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .google-signin-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #google-signin-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            min-height: 50px;
+        }
+
+        .status-container {
+            margin-top: 24px;
+            min-height: 60px;
+        }
+
+        .status-message {
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.loading {
+            background: #F0F9FF;
+            color: #0369A1;
+            border: 1px solid #BAE6FD;
+        }
+
+        .status-message.success {
+            background: #ECFDF5;
+            color: #047857;
+            border: 1px solid #A7F3D0;
+        }
+
+        .status-message.error {
+            background: #FEF2F2;
+            color: #B91C1C;
+            border: 1px solid #FECACA;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #0369A1;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .security-badge {
+            margin-top: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #94A3B8;
+        }
+
+        .security-badge i {
+            color: var(--success);
+        }
+
+        .footer {
+            margin-top: 24px;
+            font-size: 11px;
+            color: #94A3B8;
+        }
+
+        /* ===== DASHBOARD VIEW ===== */
+        #dashboard-view {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .dashboard-header .brand i {
+            font-size: 20px;
+        }
+
+        .dashboard-header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dashboard-header .user-info img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dashboard-header .user-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .dashboard-frame {
+            flex: 1;
+            width: 100%;
+            border: none;
+        }
+
+        /* Loading overlay for iframe */
+        .iframe-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #64748B;
+        }
+
+        .iframe-loading .spinner-large {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #E2E8F0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
+            }
+
+            .app-title {
+                font-size: 20px;
+            }
+
+            .dashboard-header {
+                padding: 10px 16px;
+            }
+
+            .dashboard-header .user-name {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ===== LOGIN VIEW ===== -->
+    <div id="login-view">
+        <div class="bg-animation"></div>
+
+        <div class="login-card">
+            <div class="logo-container">
+                <div class="logo-icon" aria-hidden="true">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h1 class="app-title">BillFree TechSupport</h1>
+                <p class="app-subtitle">Operations Dashboard v10.0</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <p class="welcome-text">
+                Sign in with your authorized Google account to access the IT Support Dashboard.
+            </p>
+
+            <div id="google-signin-container">
+                <button id="custom-google-btn" class="google-signin-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    Sign in with Google
+                </button>
+            </div>
+
+            <div class="status-container">
+                <!-- ♿ ARIA Live Region for screen readers -->
+                <div id="status-message" class="status-message" role="status" aria-live="polite" aria-atomic="true">
+                </div>
+            </div>
+
+            <div class="security-badge" aria-hidden="true">
+                <i class="fas fa-shield-alt"></i>
+                <span>Secured with Google OAuth 2.0</span>
+            </div>
+
+            <div class="footer">
+                &copy; 2026 BillFree Technologies. Authorized access only.
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <div id="dashboard-view">
+        <header class="dashboard-header">
+            <div class="brand">
+                <i class="fas fa-headset"></i>
+                <span>BillFree TechSupport</span>
+            </div>
+            <div class="user-info">
+                <img id="user-avatar" src="" alt="User profile picture">
+                <span id="user-display-name" class="user-name"></span>
+                <button id="logout-btn" class="logout-btn" aria-label="Log out of dashboard">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
+                </button>
+            </div>
+        </header>
+        <iframe id="dashboard-frame" class="dashboard-frame" src="about:blank" title="BillFree TechSupport Dashboard"
+            referrerpolicy="strict-origin-when-cross-origin"
+            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals allow-downloads"></iframe>
+    </div>
+
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <script src="app.js" defer></script>
+</body>
+
+</html>
